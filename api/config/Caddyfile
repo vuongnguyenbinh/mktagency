@@ -1,0 +1,39 @@
+# Caddy configuration for binhvuong.ai.vn servers
+
+:80 {
+	root * /usr/share/caddy
+	file_server
+	respond "Binhvuong Server Running..."
+}
+
+# ESG Sale - Office rental CRM (port 3007)
+:3007 {
+	root * /home/binhvuong/projects/ESGsale
+
+	# API reverse proxy to Bun server
+	handle /api/* {
+		reverse_proxy localhost:3000
+	}
+
+	# Static files (frontend)
+	handle {
+		try_files {path} /index.html
+		file_server
+	}
+}
+
+# ESG Sale with domain (HTTPS)
+esgsale.binhvuong.ai.vn {
+	root * /home/binhvuong/projects/ESGsale
+
+	# API reverse proxy to Bun server
+	handle /api/* {
+		reverse_proxy localhost:3000
+	}
+
+	# Static files (frontend)
+	handle {
+		try_files {path} /index.html
+		file_server
+	}
+}

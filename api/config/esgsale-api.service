@@ -1,0 +1,22 @@
+[Unit]
+Description=ESG Sale API (Bun + Hono + SQLite)
+After=network.target
+
+[Service]
+Type=simple
+User=binhvuong
+Group=binhvuong
+WorkingDirectory=/home/binhvuong/projects/ESGsale/api
+ExecStart=/home/binhvuong/.bun/bin/bun run src/index.ts
+# Serves both frontend and API on port 3007
+Restart=always
+RestartSec=5
+Environment=NODE_ENV=production
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=esgsale-api
+
+[Install]
+WantedBy=multi-user.target

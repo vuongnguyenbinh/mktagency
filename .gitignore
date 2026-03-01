@@ -1,0 +1,41 @@
+node_modules/
+.vite/
+.claude/
+dist/
+*.log
+
+# Sensitive files
+.env
+.env.*
+*.db
+*.sqlite
+*.key
+*.pem
+credentials*
+
+# Internal docs & plans
+plans/
+docs/
+EcoServer*.md
+HUONG_DAN.md
+*SUMMARY*.md
+*COMPLETE*.md
+*MIGRATION*.md
+*EXECUTIVE*.md
+*CHECKLIST*.md
+*VERIFICATION*.md
+*DOCUMENTATION_INDEX*.md
+
+# GAS duplicates
+API.gs.txt
+XacThuc.gs.txt
+
+# AI instructions
+CLAUDE.md
+
+# Clasp config (contains script IDs)
+.clasp.json
+
+# OS files
+.DS_Store
+Thumbs.db
