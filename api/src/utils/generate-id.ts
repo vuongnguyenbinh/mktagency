@@ -12,7 +12,7 @@ export async function generateId(
   // Use table name hash as advisory lock key to serialize ID generation per table
   const lockKey = hashCode(table);
   const rows = await sql.unsafe(
-    `SELECT pg_advisory_xact_lock(${lockKey}), ${column} as id FROM ${table} ORDER BY ${column} DESC LIMIT 1`,
+    `SELECT pg_advisory_xact_lock(${lockKey}), ${column} as id FROM ${table} ORDER BY CAST(SUBSTRING(${column} FROM '\\d+') AS INTEGER) DESC LIMIT 1`,
   );
   const last = rows[0];
   const num = last ? parseInt(last.id.replace(prefix, "")) + 1 : 1;
