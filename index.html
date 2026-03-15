@@ -22,6 +22,7 @@
         --green: #10b981;
         --yellow: #eab308;
         --purple: #8b5cf6;
+        --card-bg: #2a2a3d;
         --light-bg: #f8fafc;
         --light-card: #ffffff;
         --light-text: #1e293b;
@@ -1043,6 +1044,9 @@
         <button class="nav-item" data-page="contracts">
           <i data-lucide="file-text"></i><span>Hợp đồng</span>
         </button>
+        <button class="nav-item" data-page="employees">
+          <i data-lucide="users"></i><span>Nhân viên</span>
+        </button>
       </nav>
       <main class="main">
         <div class="page active" id="page-dashboard">
@@ -1299,6 +1303,24 @@
           </div>
           <div id="contractsContent" style="display: none"></div>
         </div>
+        <!-- Employees page -->
+        <div class="page" id="page-employees">
+          <div class="page-toolbar">
+            <div class="toolbar-left">
+              <h2 style="font-weight: 700">Nhân viên</h2>
+            </div>
+            <div class="toolbar-right">
+              <button class="btn btn-primary" onclick="addEmployee()">
+                <i data-lucide="plus"></i>Thêm nhân viên
+              </button>
+            </div>
+          </div>
+          <div class="loading" id="employeesLoading">
+            <div class="loading-spinner"></div>
+            <div>Đang tải...</div>
+          </div>
+          <div id="employeesContent" style="display: none"></div>
+        </div>
       </main>
       <nav class="mobile-nav">
         <button class="mobile-nav-item active" data-page="dashboard">
@@ -1315,6 +1337,9 @@
         </button>
         <button class="mobile-nav-item" data-page="contracts">
           <i data-lucide="file-text"></i>Hợp đồng
+        </button>
+        <button class="mobile-nav-item" data-page="employees">
+          <i data-lucide="user-cog"></i>NV
         </button>
       </nav>
 
@@ -1378,6 +1403,9 @@
         deleteOpportunity:    { method: "DELETE", path: "/api/opportunities/{id}" },
         deleteContract:       { method: "DELETE", path: "/api/contracts/{id}" },
         deleteLocation:       { method: "DELETE", path: "/api/locations/{id}" },
+        addEmployee:          { method: "POST",   path: "/api/employees" },
+        updateEmployee:       { method: "PUT",    path: "/api/employees/{id}" },
+        deleteEmployee:       { method: "DELETE", path: "/api/employees/{id}" },
         getAllLocations:       { method: "GET",    path: "/api/locations/all" },
       };
 
@@ -1708,6 +1736,9 @@
           case "contracts":
             loadContracts();
             break;
+          case "employees":
+            loadEmployees();
+            break;
         }
       }
 
@@ -1824,7 +1855,7 @@
       async function loadDashboard() {
         document.getElementById("dashboardLoading").style.display = "flex";
         document.getElementById("dashboardContent").style.display = "none";
-
+        try {
         // Get filter values
         const phuTrach = document.getElementById("filterPhuTrach").value;
         const startDate = getDateFilter();
@@ -2032,6 +2063,12 @@
         document.getElementById("dashboardLoading").style.display = "none";
         document.getElementById("dashboardContent").style.display = "block";
         lucide.createIcons();
+        } catch (e) {
+          console.error("loadDashboard error:", e);
+          document.getElementById("dashboardLoading").style.display = "none";
+          document.getElementById("dashboardContent").style.display = "block";
+          document.getElementById("dashboardContent").innerHTML = `<div class="card" style="text-align:center;padding:40px;color:var(--gray-text)">Lỗi tải dashboard: ${e.message}</div>`;
+        }
       }
 
       async function loadLocations() {
@@ -2129,6 +2166,68 @@
         const res = await apiDelete("deleteLocation", id);
         alert(res.message);
         if (res.success) loadLocations();
+      }
+
+      // ==================== EMPLOYEE MANAGEMENT ====================
+      async function loadEmployees() {
+        document.getElementById("employeesLoading").style.display = "flex";
+        document.getElementById("employeesContent").style.display = "none";
+        const result = await apiCall("getEmployees");
+        if (result && result.success) {
+          const quyenBadge = { Admin: "badge-danger", Sale: "badge-info", "Quan ly": "badge-warning" };
+          const rows = result.data.map((nv) => `<tr>
+            <td><span class="badge badge-info">${nv.ma_nv}</span></td>
+            <td>${nv.ho_ten || "-"}</td>
+            <td>${nv.email || "-"}</td>
+            <td><span class="badge ${quyenBadge[nv.quyen] || "badge-info"}">${nv.quyen}</span></td>
+            <td><span class="badge ${nv.trang_thai === "Hoat dong" ? "badge-success" : "badge-danger"}">${nv.trang_thai === "Hoat dong" ? "Hoạt động" : "Ngưng"}</span></td>
+            <td>${nv.ngay_tao ? new Date(nv.ngay_tao).toLocaleDateString("vi-VN") : "-"}</td>
+            <td class="action-buttons">
+              <button class="btn-icon btn-edit" onclick="editEmployee('${nv.ma_nv}')" title="Sửa"><i data-lucide="pencil"></i></button>
+              <button class="btn-icon btn-delete" onclick="deleteEmployee('${nv.ma_nv}')" title="Xóa"><i data-lucide="trash-2"></i></button>
+            </td>
+          </tr>`).join("");
+          document.getElementById("employeesContent").innerHTML = `<div class="table-container"><table>
+            <thead><tr><th>Mã NV</th><th>Họ tên</th><th>Email</th><th>Quyền</th><th>Trạng thái</th><th>Ngày tạo</th><th>Thao tác</th></tr></thead>
+            <tbody>${rows}</tbody></table></div>`;
+          lucide.createIcons();
+        } else {
+          showError("employeesContent", result?.message || "Không thể tải nhân viên");
+        }
+        document.getElementById("employeesLoading").style.display = "none";
+        document.getElementById("employeesContent").style.display = "block";
+      }
+
+      function addEmployee() {
+        openModal("Thêm nhân viên", "employee", null, [
+          { name: "hoTen", label: "Họ tên", type: "text" },
+          { name: "email", label: "Email", type: "email" },
+          { name: "password", label: "Mật khẩu", type: "password" },
+          { name: "quyen", label: "Quyền", type: "select", options: ["Sale", "Quan ly", "Admin"], value: "Sale" },
+          { name: "trangThai", label: "Trạng thái", type: "select", options: ["Hoat dong", "Ngung"], value: "Hoat dong" },
+        ]);
+      }
+
+      async function editEmployee(id) {
+        const result = await apiCall("getEmployees");
+        if (!result.success) return alert("Không thể tải dữ liệu");
+        const nv = result.data.find((e) => e.ma_nv === id);
+        if (!nv) return alert("Không tìm thấy nhân viên");
+        currentEditData = nv;
+        openModal("Sửa nhân viên", "employee", id, [
+          { name: "hoTen", label: "Họ tên", value: nv.ho_ten },
+          { name: "email", label: "Email", type: "email", value: nv.email },
+          { name: "password", label: "Mật khẩu mới (để trống = giữ nguyên)", type: "password", value: "" },
+          { name: "quyen", label: "Quyền", type: "select", options: ["Sale", "Quan ly", "Admin"], value: nv.quyen },
+          { name: "trangThai", label: "Trạng thái", type: "select", options: ["Hoat dong", "Ngung"], value: nv.trang_thai },
+        ]);
+      }
+
+      async function deleteEmployee(id) {
+        if (!confirm(`Xác nhận xóa nhân viên ${id}?`)) return;
+        const res = await apiDelete("deleteEmployee", id);
+        alert(res.message);
+        if (res.success) loadEmployees();
       }
 
       async function loadCustomers() {
@@ -2415,6 +2514,19 @@
             ? await apiPost("addLocation", payload)
             : await apiPut("updateLocation", id, payload);
           reload = loadLocations;
+        } else if (type === "employee") {
+          const payload = {
+            hoTen: data.hoTen,
+            email: data.email,
+            password: data.password || undefined,
+            quyen: data.quyen,
+            trangThai: data.trangThai,
+          };
+          if (!payload.password) delete payload.password;
+          res = isCreate
+            ? await apiPost("addEmployee", payload)
+            : await apiPut("updateEmployee", id, payload);
+          reload = loadEmployees;
         }
 
         if (res.success) {
