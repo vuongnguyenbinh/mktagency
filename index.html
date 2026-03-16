@@ -594,7 +594,7 @@
       .form-group textarea {
         width: 100%;
         padding: 10px 14px;
-        background: var(--bg);
+        background: var(--charcoal);
         border: 1px solid var(--line-border);
         border-radius: 8px;
         font-size: 14px;
@@ -613,6 +613,10 @@
       .form-group textarea {
         min-height: 80px;
         resize: vertical;
+      }
+      .form-group select option {
+        background: var(--charcoal);
+        color: var(--white);
       }
       .btn {
         padding: 10px 20px;
@@ -646,6 +650,10 @@
         background: var(--light-bg);
         color: var(--light-text);
         border-color: var(--light-border);
+      }
+      body.light-mode .form-group select option {
+        background: var(--light-card);
+        color: var(--light-text);
       }
       body.light-mode .btn-secondary {
         background: var(--light-border);
@@ -710,6 +718,150 @@
       body.light-mode .search-input::placeholder {
         color: var(--light-text-secondary);
       }
+      /* Autocomplete dropdown for forms */
+      .autocomplete-wrapper {
+        position: relative;
+      }
+      .autocomplete-display-input {
+        width: 100%;
+        padding: 10px 14px;
+        background: var(--charcoal);
+        border: 1px solid var(--line-border);
+        border-radius: 8px;
+        font-size: 14px;
+        color: var(--white);
+        transition: border-color 0.2s, box-shadow 0.2s;
+        box-sizing: border-box;
+      }
+      .autocomplete-display-input:focus {
+        outline: none;
+        border-color: var(--bv-red);
+        box-shadow: 0 0 0 3px rgba(218,37,29,0.15);
+      }
+      .autocomplete-display-input::placeholder {
+        color: var(--gray-text);
+      }
+      body.light-mode .autocomplete-display-input {
+        background: var(--light-bg);
+        color: var(--light-text);
+        border-color: var(--light-border);
+      }
+      body.light-mode .autocomplete-display-input::placeholder {
+        color: var(--light-text-secondary);
+      }
+      .autocomplete-results {
+        position: absolute;
+        top: calc(100% + 2px);
+        left: 0;
+        right: 0;
+        background: var(--card-bg);
+        border: 1px solid var(--line-border);
+        border-radius: 8px;
+        max-height: 220px;
+        overflow-y: auto;
+        z-index: 1000;
+        display: none;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      }
+      .autocomplete-results.open {
+        display: block;
+      }
+      .autocomplete-item {
+        padding: 10px 14px;
+        cursor: pointer;
+        font-size: 13px;
+        border-bottom: 1px solid var(--line-border);
+        transition: background 0.15s;
+      }
+      .autocomplete-item:last-child {
+        border-bottom: none;
+      }
+      .autocomplete-item:hover,
+      .autocomplete-item.selected {
+        background: var(--line-border);
+      }
+      .autocomplete-item .item-name {
+        font-weight: 500;
+        color: var(--white);
+      }
+      .autocomplete-item .item-sub {
+        font-size: 11px;
+        color: var(--gray-text);
+        margin-top: 2px;
+      }
+      body.light-mode .autocomplete-results {
+        background: var(--light-card);
+        border-color: var(--light-border);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+      }
+      body.light-mode .autocomplete-item {
+        border-bottom-color: var(--light-border);
+      }
+      body.light-mode .autocomplete-item:hover,
+      body.light-mode .autocomplete-item.selected {
+        background: var(--light-bg);
+      }
+      body.light-mode .autocomplete-item .item-name {
+        color: var(--light-text);
+      }
+      body.light-mode .autocomplete-item .item-sub {
+        color: var(--light-text-secondary);
+      }
+      /* Cascading location selects */
+      .cascading-location-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .cascading-location-group select {
+        width: 100%;
+        padding: 10px 14px;
+        background: var(--charcoal);
+        border: 1px solid var(--line-border);
+        border-radius: 8px;
+        font-size: 14px;
+        color: var(--white);
+        transition: border-color 0.2s, box-shadow 0.2s;
+      }
+      .cascading-location-group select:focus {
+        outline: none;
+        border-color: var(--bv-red);
+        box-shadow: 0 0 0 3px rgba(218,37,29,0.15);
+      }
+      .cascading-location-group select option {
+        background: var(--charcoal);
+        color: var(--white);
+      }
+      .room-detail-info {
+        font-size: 12px;
+        color: var(--gray-text);
+        padding: 6px 10px;
+        background: rgba(255,255,255,0.03);
+        border-radius: 6px;
+        margin-top: 4px;
+        display: none;
+      }
+      .room-detail-info.visible {
+        display: block;
+      }
+      body.light-mode .cascading-location-group select {
+        background: var(--light-bg);
+        color: var(--light-text);
+        border-color: var(--light-border);
+      }
+      body.light-mode .cascading-location-group select option {
+        background: var(--light-card);
+        color: var(--light-text);
+      }
+      body.light-mode .room-detail-info {
+        background: rgba(0,0,0,0.03);
+        color: var(--light-text-secondary);
+      }
+      /* Customer status badges */
+      .badge-status-moi { background: rgba(59,130,246,0.15); color: #3b82f6; }
+      .badge-status-gan { background: rgba(16,185,129,0.15); color: #10b981; }
+      .badge-status-theo { background: rgba(234,179,8,0.15); color: #eab308; }
+      .badge-status-khong { background: rgba(239,68,68,0.15); color: #ef4444; }
       .page-toolbar {
         display: flex;
         justify-content: space-between;
@@ -1088,10 +1240,17 @@
             </div>
             <div class="stats-grid">
               <div class="stat-card">
+                <div class="stat-icon blue"><i data-lucide="users"></i></div>
+                <div>
+                  <div class="stat-value" id="statKhachHang">0</div>
+                  <div class="stat-label">Khách hàng</div>
+                </div>
+              </div>
+              <div class="stat-card">
                 <div class="stat-icon red"><i data-lucide="target"></i></div>
                 <div>
                   <div class="stat-value" id="statCoHoi">0</div>
-                  <div class="stat-label">Cơ hội mới</div>
+                  <div class="stat-label">Cơ hội</div>
                 </div>
               </div>
               <div class="stat-card">
@@ -1194,6 +1353,13 @@
                 placeholder="Tìm theo tên, SĐT, email..."
                 oninput="searchCustomersDebounced()"
               />
+              <select id="filterCustomerStatus" class="filter-select" onchange="loadCustomers()">
+                <option value="">Tất cả trạng thái</option>
+                <option value="Mới">Mới</option>
+                <option value="Đã gán cơ hội">Đã gán cơ hội</option>
+                <option value="Đang theo dõi">Đang theo dõi</option>
+                <option value="Không tiềm năng">Không tiềm năng</option>
+              </select>
             </div>
             <div class="toolbar-right">
               <input
@@ -1411,7 +1577,7 @@
 
       // GAS param names → REST query param names
       const PARAM_MAP = {
-        getCustomers:         { timKiem: "search" },
+        getCustomers:         { timKiem: "search", trangThai: "trangThai" },
         getOpportunities:     { timKiem: "search", giaiDoan: "giaiDoan", phuTrach: "phuTrach" },
         getContracts:         { timKiem: "search", trangThai: "trangThai" },
         getExpiringContracts: { days: "days" },
@@ -1860,9 +2026,13 @@
         const phuTrach = document.getElementById("filterPhuTrach").value;
         const startDate = getDateFilter();
 
-        // Load all opportunities for filtering
-        const oppResult = await apiCall("getOpportunities", {});
+        // Load all opportunities and customers for filtering
+        const [oppResult, custResult] = await Promise.all([
+          apiCall("getOpportunities", {}),
+          apiCall("getCustomers", {}),
+        ]);
         let opportunities = oppResult.success ? oppResult.data : [];
+        const totalCustomers = custResult.success ? custResult.data.length : 0;
 
         // Apply filters
         if (startDate) {
@@ -1895,18 +2065,30 @@
         });
 
         // Update stats display
+        document.getElementById("statKhachHang").textContent = totalCustomers;
         document.getElementById("statCoHoi").textContent = tongCoHoi;
         document.getElementById("statThanhCong").textContent = thanhCong;
         document.getElementById("statTyLe").textContent = tyLeChuyenDoi + "%";
         document.getElementById("statThatBai").textContent = thatBai;
 
-        // Update funnel chart
+        // Update funnel chart — Customer → Opportunity pipeline
         const funnelContainer = document.getElementById("funnelChart");
-        const maxValue = Math.max(...Object.values(theoGiaiDoan), 1);
-        funnelContainer.innerHTML = Object.entries(theoGiaiDoan)
-          .map(([label, value]) => {
-            const width = maxValue > 0 ? (value / maxValue) * 100 : 0;
-            return `<div class="funnel-item"><div class="funnel-label">${label}</div><div class="funnel-bar" style="width:${width}%"></div><div class="funnel-value">${value}</div></div>`;
+        const stageOrder = ["Mới", "Đã xem", "Đã liên hệ", "Đang đàm phán", "Thành công", "Thất bại"];
+        const funnelStages = [
+          { label: "Khách hàng", value: totalCustomers, color: "#3b82f6" },
+          ...stageOrder
+            .filter((s) => theoGiaiDoan[s])
+            .map((s) => ({
+              label: s,
+              value: theoGiaiDoan[s],
+              color: { "Mới": "#8b5cf6", "Đã xem": "#6366f1", "Đã liên hệ": "#06b6d4", "Đang đàm phán": "#eab308", "Thành công": "#10b981", "Thất bại": "#da251d" }[s] || "#64748b",
+            })),
+        ];
+        const maxValue = Math.max(...funnelStages.map((s) => s.value), 1);
+        funnelContainer.innerHTML = funnelStages
+          .map((s) => {
+            const width = maxValue > 0 ? (s.value / maxValue) * 100 : 0;
+            return `<div class="funnel-item"><div class="funnel-label">${s.label}</div><div class="funnel-bar" style="width:${width}%;background:${s.color}"></div><div class="funnel-value">${s.value}</div></div>`;
           })
           .join("");
 
@@ -2100,8 +2282,8 @@
         const result = await res.json();
 
         if (result && result.success) {
-          const statusBadge = { "Trong": "badge-success", "Dang thue": "badge-danger", "Giu cho": "badge-warning" };
-          const statusLabel = { "Trong": "Trống", "Dang thue": "Đang thuê", "Giu cho": "Giữ chỗ" };
+          const statusBadge = { "Trống": "badge-success", "Đang thuê": "badge-danger", "Giữ chỗ": "badge-warning" };
+          const statusLabel = { "Trống": "Trống", "Đang thuê": "Đang thuê", "Giữ chỗ": "Giữ chỗ" };
           const rows = result.data.map((r) => `<tr>
             <td><span class="badge badge-info">${r.ma_dd}</span></td>
             <td>${r.tang ?? "-"}</td>
@@ -2156,7 +2338,7 @@
           { name: "dienTich", label: "Diện tích (m²)", value: loc.dien_tich, type: "number" },
           { name: "giaThue", label: "Giá thuê (VNĐ/tháng)", value: loc.gia_thue, type: "number" },
           { name: "phiDichVu", label: "Phí dịch vụ", value: loc.phi_dich_vu, type: "number" },
-          { name: "trangThai", label: "Trạng thái", value: loc.trang_thai, type: "select", options: ["Trong", "Dang thue", "Giu cho"] },
+          { name: "trangThai", label: "Trạng thái", value: loc.trang_thai, type: "select", options: ["Trống", "Đang thuê", "Giữ chỗ"] },
           { name: "ghiChu", label: "Ghi chú", value: loc.ghi_chu, type: "textarea" },
         ]);
       }
@@ -2230,11 +2412,23 @@
         if (res.success) loadEmployees();
       }
 
+      function getCustomerStatusBadge(status) {
+        const map = {
+          "Mới": "badge-status-moi",
+          "Đã gán cơ hội": "badge-status-gan",
+          "Đang theo dõi": "badge-status-theo",
+          "Không tiềm năng": "badge-status-khong",
+        };
+        return map[status] || "badge-status-moi";
+      }
+
       async function loadCustomers() {
         document.getElementById("customersLoading").style.display = "flex";
         document.getElementById("customersContent").style.display = "none";
 
-        const result = await apiCall("getCustomers", {});
+        const statusFilter = document.getElementById("filterCustomerStatus")?.value || "";
+        const params = statusFilter ? { trangThai: statusFilter } : {};
+        const result = await apiCall("getCustomers", params);
         if (result && result.success) {
           const search = (
             document.getElementById("searchCustomers")?.value || ""
@@ -2260,12 +2454,14 @@
             ${renderSortHeader("customers", "sdt", "SĐT", "loadCustomers")}
             ${renderSortHeader("customers", "email", "Email", "loadCustomers")}
             ${renderSortHeader("customers", "nguon", "Nguồn", "loadCustomers")}
+            ${renderSortHeader("customers", "trang_thai", "Trạng thái", "loadCustomers")}
             ${renderSortHeader("customers", "ngay_tao", "Ngày tạo", "loadCustomers")}
             <th>Thao tác</th>
           </tr>`;
 
+          const statusLabel = (s) => s || "Mới";
           document.getElementById("customersContent").innerHTML =
-            `<div class="table-container"><table><thead>${headers}</thead><tbody>${paged.map((kh) => `<tr><td><span class="badge badge-info">${kh.ma_kh}</span></td><td style="font-weight:500">${kh.ho_ten}</td><td>${kh.sdt}</td><td>${kh.email || "-"}</td><td><span class="badge badge-purple">${kh.nguon || "-"}</span></td><td>${formatDate(kh.ngay_tao)}</td><td class="action-buttons"><button class="btn-icon btn-edit" onclick="editCustomer('${kh.ma_kh}')" title="Sửa"><i data-lucide="pencil"></i></button><button class="btn-icon btn-delete" onclick="deleteCustomer('${kh.ma_kh}')" title="Xóa"><i data-lucide="trash-2"></i></button></td></tr>`).join("")}</tbody></table></div>` +
+            `<div class="table-container"><table><thead>${headers}</thead><tbody>${paged.map((kh) => `<tr><td><span class="badge badge-info">${kh.ma_kh}</span></td><td style="font-weight:500">${kh.ho_ten}</td><td>${kh.sdt}</td><td>${kh.email || "-"}</td><td><span class="badge badge-purple">${kh.nguon || "-"}</span></td><td><span class="badge ${getCustomerStatusBadge(kh.trang_thai)}">${statusLabel(kh.trang_thai)}</span></td><td>${formatDate(kh.ngay_tao)}</td><td class="action-buttons"><button class="btn-icon" onclick="assignOpportunityFromCustomer('${kh.ma_kh}', '${(kh.ho_ten||"").replace(/'/g,"\\'")}', '${(kh.sdt||"")}', '${(kh.cong_ty||"").replace(/'/g,"\\'")}')\" title="Gán cơ hội" style="background:rgba(59,130,246,0.1);color:#3b82f6;border-radius:6px;padding:4px 8px;border:none;cursor:pointer;font-size:12px">Gán CH</button> <button class="btn-icon btn-edit" onclick="editCustomer('${kh.ma_kh}')" title="Sửa"><i data-lucide="pencil"></i></button><button class="btn-icon btn-delete" onclick="deleteCustomer('${kh.ma_kh}')" title="Xóa"><i data-lucide="trash-2"></i></button></td></tr>`).join("")}</tbody></table></div>` +
             renderPagination("customers", total, loadCustomers);
           lucide.createIcons();
         } else {
@@ -2380,6 +2576,50 @@
       // ==================== MODAL FUNCTIONS ====================
       let currentEditData = null;
 
+      function renderFieldHtml(f) {
+        if (f.type === "select") {
+          return `<select id="field_${f.name}" name="${f.name}">
+            ${f.options.map((o) => {
+              const val = typeof o === "object" ? o.value : o;
+              const label = typeof o === "object" ? o.label : o;
+              return `<option value="${val}" ${f.value === val ? "selected" : ""}>${label}</option>`;
+            }).join("")}
+          </select>`;
+        }
+        if (f.type === "textarea") {
+          return `<textarea id="field_${f.name}" name="${f.name}">${f.value || ""}</textarea>`;
+        }
+        if (f.type === "autocomplete") {
+          return `<div class="autocomplete-wrapper" id="autocomplete_wrapper_${f.name}">
+            <input type="text" id="field_${f.name}_display" class="autocomplete-display-input" autocomplete="off"
+              placeholder="${f.placeholder || "Gõ để tìm kiếm..."}"
+              value="${f.displayValue || ""}" />
+            <input type="hidden" id="field_${f.name}" name="${f.name}" value="${f.value || ""}" />
+            <div class="autocomplete-results" id="autocomplete_results_${f.name}"></div>
+          </div>`;
+        }
+        if (f.type === "cascading-location") {
+          return `<div class="cascading-location-group" id="cascading_loc">
+            <select id="loc_toa_nha" onchange="onBuildingChange()">
+              <option value="">-- Chọn tòa nhà --</option>
+            </select>
+            <select id="loc_tang" onchange="onFloorChange()" disabled>
+              <option value="">-- Chọn tầng --</option>
+            </select>
+            <select id="loc_phong" onchange="onRoomChange()" disabled>
+              <option value="">-- Chọn phòng --</option>
+            </select>
+            <input type="hidden" id="field_${f.name}" name="${f.name}" value="${f.value || ""}" />
+            <div class="room-detail-info" id="room_detail_info"></div>
+            <label style="font-size:12px;color:var(--gray-text);margin-top:4px;display:flex;align-items:center;gap:6px;cursor:pointer">
+              <input type="checkbox" id="loc_show_all" onchange="onShowAllRoomsChange()" />
+              Hiện tất cả phòng (kể cả đang thuê)
+            </label>
+          </div>`;
+        }
+        return `<input type="${f.type || "text"}" id="field_${f.name}" name="${f.name}" value="${f.value || ""}" ${f.readonly ? 'readonly style="opacity:0.6;cursor:not-allowed"' : ""} />`;
+      }
+
       function openModal(title, type, id, fields) {
         document.getElementById("modalTitle").textContent = title;
         document.getElementById("editId").value = id;
@@ -2387,28 +2627,12 @@
 
         const formFields = document.getElementById("formFields");
         formFields.innerHTML = fields
-          .map(
-            (f) => `
-          <div class="form-group">
+          .map((f) => `
+          <div class="form-group" ${f.type === "hidden" ? 'style="display:none"' : ""}>
             <label for="field_${f.name}">${f.label}</label>
-            ${
-              f.type === "select"
-                ? `
-              <select id="field_${f.name}" name="${f.name}">
-                ${f.options.map((o) => `<option value="${o}" ${f.value === o ? "selected" : ""}>${o}</option>`).join("")}
-              </select>
-            `
-                : f.type === "textarea"
-                  ? `
-              <textarea id="field_${f.name}" name="${f.name}">${f.value || ""}</textarea>
-            `
-                  : `
-              <input type="${f.type || "text"}" id="field_${f.name}" name="${f.name}" value="${f.value || ""}" ${f.readonly ? 'readonly style="opacity:0.6;cursor:not-allowed"' : ""} />
-            `
-            }
+            ${renderFieldHtml(f)}
           </div>
-        `,
-          )
+        `)
           .join("");
 
         document.getElementById("editModal").style.display = "flex";
@@ -2449,6 +2673,7 @@
             email: data.email,
             congTy: data.congTy,
             nguon: data.nguon,
+            trangThai: data.trangThai || "Mới",
             ghiChu: data.ghiChu,
           };
           res = isCreate
@@ -2457,18 +2682,19 @@
           reload = loadCustomers;
         } else if (type === "opportunity") {
           const payload = {
+            maKh: data.maKh || currentEditData?.ma_kh || "",
             tenKh: data.tenKh,
             sdt: data.sdt,
             tenCongTy: data.tenCongTy,
-            mst: currentEditData?.mst || "",
+            mst: data.mst || currentEditData?.mst || "",
             nhuCauDt: data.nhuCauDt,
             nganSach: data.nganSach,
             khuVuc: data.khuVuc,
-            ddQuanTam: currentEditData?.dd_quan_tam || "",
+            ddQuanTam: data.ddQuanTam || currentEditData?.dd_quan_tam || "",
             giaiDoan: data.giaiDoan,
             danhGia: data.danhGia,
-            phuTrach: currentEditData?.phu_trach || "",
-            lichSuTuVan: currentEditData?.lich_su_tu_van || "",
+            phuTrach: data.phuTrach || currentEditData?.phu_trach || "",
+            lichSuTuVan: data.lichSuTuVan || currentEditData?.lich_su_tu_van || "",
             lyDoThatBai: data.lyDoThatBai || "",
           };
           res = isCreate
@@ -2557,6 +2783,13 @@
             options: ["Website", "Facebook", "Zalo", "Giới thiệu", "Khác"],
           },
           {
+            name: "trangThai",
+            label: "Trạng thái",
+            value: kh.trang_thai || "Mới",
+            type: "select",
+            options: ["Mới", "Đã gán cơ hội", "Đang theo dõi", "Không tiềm năng"],
+          },
+          {
             name: "ghiChu",
             label: "Ghi chú",
             value: kh.ghi_chu,
@@ -2566,16 +2799,37 @@
       }
 
       async function editOpportunity(id) {
-        const result = await apiCall("getOpportunities", {});
-        if (!result.success) return alert("Không thể tải dữ liệu");
-        const ch = result.data.find((c) => c.ma_ch === id);
+        const [oppResult, locResult, empResult] = await Promise.all([
+          apiCall("getOpportunities", {}),
+          apiCall("getAllLocations", {}),
+          apiCall("getEmployees"),
+        ]);
+        if (!oppResult.success) return alert("Không thể tải dữ liệu");
+        const ch = oppResult.data.find((c) => c.ma_ch === id);
         if (!ch) return alert("Không tìm thấy cơ hội");
         currentEditData = ch;
+
+        const locations = locResult.success ? locResult.data : [];
+        const locationOptions = [
+          { value: "", label: "-- Chọn địa điểm --" },
+          ...locations.map((dd) => ({
+            value: dd.ma_dd,
+            label: `${dd.toa_nha} - T${dd.tang || "?"} P${dd.phong || "?"} (${dd.dien_tich || "?"}m², ${dd.trang_thai})`,
+          })),
+        ];
+
+        const employees = empResult.success ? empResult.data : [];
+        const empOptions = [
+          { value: "", label: "-- Chọn NV --" },
+          ...employees.map((nv) => ({ value: nv.ho_ten, label: nv.ho_ten })),
+        ];
 
         openModal("Sửa cơ hội", "opportunity", id, [
           { name: "tenKh", label: "Tên khách hàng *", value: ch.ten_kh },
           { name: "sdt", label: "Số điện thoại", value: ch.sdt },
           { name: "tenCongTy", label: "Công ty", value: ch.ten_cong_ty },
+          { name: "mst", label: "MST", value: ch.mst },
+          { name: "ddQuanTam", label: "Địa điểm quan tâm", value: ch.dd_quan_tam, type: "select", options: locationOptions },
           {
             name: "nhuCauDt",
             label: "Nhu cầu diện tích",
@@ -2588,14 +2842,21 @@
             label: "Giai đoạn",
             value: ch.giai_doan,
             type: "select",
-            options: ["Mới", "Liên hệ", "Đàm phán", "Thành công", "Thất bại"],
+            options: ["Mới", "Đã xem", "Đã liên hệ", "Đang đàm phán", "Thành công", "Thất bại"],
           },
           {
             name: "danhGia",
             label: "Đánh giá",
             value: ch.danh_gia,
             type: "select",
-            options: ["Tích cực", "Suy nghĩ", "Tiêu cực"],
+            options: ["Thích", "Suy nghĩ", "Không thích"],
+          },
+          { name: "phuTrach", label: "Phụ trách", value: ch.phu_trach, type: "select", options: empOptions },
+          {
+            name: "lichSuTuVan",
+            label: "Lịch sử tư vấn",
+            value: ch.lich_su_tu_van,
+            type: "textarea",
           },
           {
             name: "lyDoThatBai",
@@ -2723,12 +2984,195 @@
         ]);
       }
 
-      function addOpportunity() {
+      // ==================== AUTOCOMPLETE HELPERS ====================
+      function initAutocomplete(fieldName, allItems, searchFn, renderFn, onSelectFn) {
+        const input = document.getElementById(`field_${fieldName}_display`);
+        const hiddenInput = document.getElementById(`field_${fieldName}`);
+        const results = document.getElementById(`autocomplete_results_${fieldName}`);
+        if (!input || !results) return;
+
+        let selectedIndex = -1;
+
+        function showResults(query) {
+          const matched = query.length > 0 ? searchFn(allItems, query).slice(0, 10) : [];
+          if (matched.length === 0) {
+            results.classList.remove("open");
+            return;
+          }
+          results.innerHTML = matched.map((item, i) => renderFn(item, i)).join("");
+          results.classList.add("open");
+          selectedIndex = -1;
+
+          results.querySelectorAll(".autocomplete-item").forEach((el, i) => {
+            el.addEventListener("mousedown", (e) => {
+              e.preventDefault();
+              onSelectFn(matched[i], input, hiddenInput);
+              results.classList.remove("open");
+            });
+          });
+        }
+
+        input.addEventListener("input", () => showResults(input.value));
+        input.addEventListener("focus", () => { if (input.value) showResults(input.value); });
+        input.addEventListener("blur", () => setTimeout(() => results.classList.remove("open"), 150));
+        input.addEventListener("keydown", (e) => {
+          const items = results.querySelectorAll(".autocomplete-item");
+          if (e.key === "ArrowDown") {
+            e.preventDefault();
+            selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
+            items.forEach((el, i) => el.classList.toggle("selected", i === selectedIndex));
+          } else if (e.key === "ArrowUp") {
+            e.preventDefault();
+            selectedIndex = Math.max(selectedIndex - 1, 0);
+            items.forEach((el, i) => el.classList.toggle("selected", i === selectedIndex));
+          } else if (e.key === "Enter" && selectedIndex >= 0) {
+            e.preventDefault();
+            items[selectedIndex].dispatchEvent(new MouseEvent("mousedown"));
+          } else if (e.key === "Escape") {
+            results.classList.remove("open");
+          }
+        });
+      }
+
+      // ==================== CASCADING LOCATION HELPERS ====================
+      function initCascadingLocation(allLocations, selectedMaDd) {
+        window._locAllRooms = allLocations;
+        window._locShowAll = false;
+
+        function getFilteredRooms() {
+          return window._locShowAll ? window._locAllRooms : window._locAllRooms.filter((d) => d.trang_thai === "Trống");
+        }
+
+        function getBuildings() {
+          const rooms = getFilteredRooms();
+          return [...new Set(rooms.map((d) => d.toa_nha))].sort();
+        }
+
+        function getFloors(building) {
+          const rooms = getFilteredRooms().filter((d) => d.toa_nha === building);
+          return [...new Set(rooms.map((d) => d.tang))].sort((a, b) => a - b);
+        }
+
+        function getRooms(building, floor) {
+          return getFilteredRooms().filter((d) => d.toa_nha === building && d.tang === floor);
+        }
+
+        function populateBuildings() {
+          const sel = document.getElementById("loc_toa_nha");
+          const cur = sel.value;
+          sel.innerHTML = '<option value="">-- Chọn tòa nhà --</option>' +
+            getBuildings().map((b) => `<option value="${b}" ${b === cur ? "selected" : ""}>${b}</option>`).join("");
+        }
+
+        function populateFloors(building) {
+          const sel = document.getElementById("loc_tang");
+          sel.innerHTML = '<option value="">-- Chọn tầng --</option>' +
+            getFloors(building).map((t) => `<option value="${t}">Tầng ${t}</option>`).join("");
+          sel.disabled = !building;
+          document.getElementById("loc_phong").innerHTML = '<option value="">-- Chọn phòng --</option>';
+          document.getElementById("loc_phong").disabled = true;
+          document.getElementById("field_ddQuanTam").value = "";
+          document.getElementById("room_detail_info").classList.remove("visible");
+        }
+
+        function populateRooms(building, floor) {
+          const rooms = getRooms(building, parseInt(floor));
+          const sel = document.getElementById("loc_phong");
+          sel.innerHTML = '<option value="">-- Chọn phòng --</option>' +
+            rooms.map((r) => {
+              const statusIcon = r.trang_thai === "Trống" ? "✓" : r.trang_thai === "Giữ chỗ" ? "⏳" : "✗";
+              return `<option value="${r.ma_dd}">${statusIcon} Phòng ${r.phong} (${r.dien_tich || "?"}m²) - ${r.trang_thai}</option>`;
+            }).join("");
+          sel.disabled = rooms.length === 0;
+        }
+
+        window.onBuildingChange = function() {
+          const building = document.getElementById("loc_toa_nha").value;
+          populateFloors(building);
+        };
+
+        window.onFloorChange = function() {
+          const building = document.getElementById("loc_toa_nha").value;
+          const floor = document.getElementById("loc_tang").value;
+          populateRooms(building, floor);
+          document.getElementById("field_ddQuanTam").value = "";
+          document.getElementById("room_detail_info").classList.remove("visible");
+        };
+
+        window.onRoomChange = function() {
+          const maDd = document.getElementById("loc_phong").value;
+          document.getElementById("field_ddQuanTam").value = maDd;
+          const room = window._locAllRooms.find((r) => r.ma_dd === maDd);
+          const info = document.getElementById("room_detail_info");
+          if (room && maDd) {
+            info.textContent = `Diện tích: ${room.dien_tich || "?"}m² | Giá thuê: ${room.gia_thue ? Number(room.gia_thue).toLocaleString("vi-VN") + " VNĐ" : "?"} | Trạng thái: ${room.trang_thai}`;
+            info.classList.add("visible");
+          } else {
+            info.classList.remove("visible");
+          }
+        };
+
+        window.onShowAllRoomsChange = function() {
+          window._locShowAll = document.getElementById("loc_show_all").checked;
+          const building = document.getElementById("loc_toa_nha").value;
+          const floor = document.getElementById("loc_tang").value;
+          populateBuildings();
+          if (building) populateFloors(building);
+          if (building && floor) populateRooms(building, floor);
+        };
+
+        // Initialize
+        populateBuildings();
+
+        // If editing — pre-select existing value
+        if (selectedMaDd) {
+          const room = allLocations.find((r) => r.ma_dd === selectedMaDd);
+          if (room) {
+            setTimeout(() => {
+              document.getElementById("loc_toa_nha").value = room.toa_nha;
+              populateFloors(room.toa_nha);
+              setTimeout(() => {
+                document.getElementById("loc_tang").value = room.tang;
+                populateRooms(room.toa_nha, room.tang);
+                setTimeout(() => {
+                  document.getElementById("loc_phong").value = room.ma_dd;
+                  window.onRoomChange();
+                }, 10);
+              }, 10);
+            }, 10);
+          }
+        }
+      }
+
+      async function addOpportunity(prefill) {
         currentEditData = null;
+        const [custResult, locResult] = await Promise.all([
+          apiCall("getCustomers", {}),
+          apiCall("getAllLocations", {}),
+        ]);
+        const customers = custResult.success ? custResult.data : [];
+        const locations = locResult.success ? locResult.data : [];
+
+        window._opportunityCustomers = customers;
+
         openModal("Thêm cơ hội", "opportunity", "", [
-          { name: "tenKh", label: "Tên khách hàng *", value: "" },
-          { name: "sdt", label: "Số điện thoại", value: "" },
-          { name: "tenCongTy", label: "Công ty", value: "" },
+          {
+            name: "maKh",
+            label: "Khách hàng",
+            type: "autocomplete",
+            value: prefill?.maKh || "",
+            displayValue: prefill ? `${prefill.tenKh}${prefill.sdt ? " - " + prefill.sdt : ""}` : "",
+            placeholder: "Gõ tên hoặc SĐT để tìm...",
+          },
+          { name: "tenKh", label: "Tên KH *", value: prefill?.tenKh || "" },
+          { name: "sdt", label: "Số điện thoại", value: prefill?.sdt || "" },
+          { name: "tenCongTy", label: "Công ty", value: prefill?.tenCongTy || "" },
+          {
+            name: "ddQuanTam",
+            label: "Địa điểm quan tâm (Tòa nhà → Tầng → Phòng)",
+            type: "cascading-location",
+            value: "",
+          },
           { name: "nhuCauDt", label: "Nhu cầu diện tích", value: "" },
           { name: "nganSach", label: "Ngân sách", value: "" },
           { name: "khuVuc", label: "Khu vực", value: "" },
@@ -2737,16 +3181,48 @@
             label: "Giai đoạn",
             value: "Mới",
             type: "select",
-            options: ["Mới", "Liên hệ", "Đàm phán", "Thành công", "Thất bại"],
+            options: ["Mới", "Đã xem", "Đã liên hệ", "Đang đàm phán", "Thành công", "Thất bại"],
           },
           {
             name: "danhGia",
             label: "Đánh giá",
             value: "Suy nghĩ",
             type: "select",
-            options: ["Tích cực", "Suy nghĩ", "Tiêu cực"],
+            options: ["Thích", "Suy nghĩ", "Không thích"],
           },
         ]);
+
+        // Initialize customer autocomplete
+        initAutocomplete(
+          "maKh",
+          customers,
+          (items, q) => {
+            const ql = q.toLowerCase();
+            return items.filter((k) =>
+              (k.ho_ten || "").toLowerCase().includes(ql) ||
+              (k.sdt || "").toLowerCase().includes(ql) ||
+              (k.cong_ty || "").toLowerCase().includes(ql)
+            );
+          },
+          (item) => `<div class="autocomplete-item">
+            <div class="item-name">${item.ho_ten}</div>
+            <div class="item-sub">${item.sdt || ""}${item.cong_ty ? " · " + item.cong_ty : ""}</div>
+          </div>`,
+          (item, displayInput, hiddenInput) => {
+            displayInput.value = `${item.ho_ten}${item.sdt ? " - " + item.sdt : ""}`;
+            hiddenInput.value = item.ma_kh;
+            document.getElementById("field_tenKh").value = item.ho_ten;
+            document.getElementById("field_sdt").value = item.sdt || "";
+            document.getElementById("field_tenCongTy").value = item.cong_ty || "";
+          }
+        );
+
+        // Initialize cascading location
+        initCascadingLocation(locations, null);
+      }
+
+      async function assignOpportunityFromCustomer(maKh, tenKh, sdt, tenCongTy) {
+        await addOpportunity({ maKh, tenKh, sdt, tenCongTy });
       }
 
       function addContract() {

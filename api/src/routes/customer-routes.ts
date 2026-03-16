@@ -4,17 +4,29 @@ import { generateId } from "../utils/generate-id";
 
 const customers = new Hono();
 
-// List customers with optional search
+// List customers with optional search and status filter
 customers.get("/", async (c) => {
   const search = c.req.query("search");
+  const trangThai = c.req.query("trangThai");
   let rows;
-  if (search) {
+
+  if (search && trangThai) {
+    const pattern = `%${search}%`;
+    rows = await sql`
+      SELECT * FROM khach_hang
+      WHERE (ho_ten ILIKE ${pattern} OR sdt ILIKE ${pattern} OR cong_ty ILIKE ${pattern})
+        AND trang_thai = ${trangThai}
+      ORDER BY ngay_tao DESC
+    `;
+  } else if (search) {
     const pattern = `%${search}%`;
     rows = await sql`
       SELECT * FROM khach_hang
       WHERE ho_ten ILIKE ${pattern} OR sdt ILIKE ${pattern} OR cong_ty ILIKE ${pattern}
       ORDER BY ngay_tao DESC
     `;
+  } else if (trangThai) {
+    rows = await sql`SELECT * FROM khach_hang WHERE trang_thai = ${trangThai} ORDER BY ngay_tao DESC`;
   } else {
     rows = await sql`SELECT * FROM khach_hang ORDER BY ngay_tao DESC`;
   }
@@ -53,7 +65,8 @@ customers.put("/:id", async (c) => {
   await sql`
     UPDATE khach_hang
     SET sdt = ${body.sdt}, ho_ten = ${body.hoTen}, email = ${body.email || null},
-        cong_ty = ${body.congTy || null}, nguon = ${body.nguon || null}, ghi_chu = ${body.ghiChu || null}
+        cong_ty = ${body.congTy || null}, nguon = ${body.nguon || null}, ghi_chu = ${body.ghiChu || null},
+        trang_thai = ${body.trangThai || 'Mới'}
     WHERE ma_kh = ${maKh}
   `;
   return c.json({ success: true, message: "Cap nhat khach hang thanh cong" });

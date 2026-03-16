@@ -8,8 +8,8 @@ dashboard.get("/", async (c) => {
   const [stats] = await sql`
     SELECT
       COUNT(*)::int as "tongCoHoi",
-      SUM(CASE WHEN giai_doan = 'Thanh cong' THEN 1 ELSE 0 END)::int as "thanhCong",
-      SUM(CASE WHEN giai_doan = 'That bai' THEN 1 ELSE 0 END)::int as "thatBai"
+      SUM(CASE WHEN giai_doan = 'Thành công' THEN 1 ELSE 0 END)::int as "thanhCong",
+      SUM(CASE WHEN giai_doan = 'Thất bại' THEN 1 ELSE 0 END)::int as "thatBai"
     FROM co_hoi
   `;
 

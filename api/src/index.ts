@@ -11,6 +11,7 @@ import opportunities from "./routes/opportunity-routes";
 import contracts from "./routes/contract-routes";
 import locations from "./routes/location-routes";
 import employees from "./routes/employee-routes";
+import n8n from "./routes/n8n-routes";
 
 const app = new Hono();
 
@@ -61,6 +62,7 @@ app.route("/api/opportunities", opportunities);
 app.route("/api/contracts", contracts);
 app.route("/api/locations", locations);
 app.route("/api/employees", employees);
+app.route("/api/n8n", n8n);
 
 // Serve static files (frontend)
 app.use("/*", serveStatic({ root: "../" }));

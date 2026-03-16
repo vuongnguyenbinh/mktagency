@@ -11,9 +11,9 @@ locations.get("/", async (c) => {
       toa_nha as ten,
       MIN(dia_chi) as "diaChi",
       COUNT(*)::int as "tongPhong",
-      SUM(CASE WHEN trang_thai = 'Trong' THEN 1 ELSE 0 END)::int as trong,
-      SUM(CASE WHEN trang_thai = 'Dang thue' THEN 1 ELSE 0 END)::int as "dangThue",
-      SUM(CASE WHEN trang_thai = 'Giu cho' THEN 1 ELSE 0 END)::int as "giuCho"
+      SUM(CASE WHEN trang_thai = 'Trống' THEN 1 ELSE 0 END)::int as trong,
+      SUM(CASE WHEN trang_thai = 'Đang thuê' THEN 1 ELSE 0 END)::int as "dangThue",
+      SUM(CASE WHEN trang_thai = 'Giữ chỗ' THEN 1 ELSE 0 END)::int as "giuCho"
     FROM dia_diem
     GROUP BY toa_nha
     ORDER BY toa_nha
@@ -65,7 +65,7 @@ locations.post("/", async (c) => {
       ${maDd}, ${body.toaNha}, ${body.diaChi || null},
       ${body.tang || null}, ${body.phong || null}, ${body.tenHienThi || null},
       ${body.dienTich || null}, ${body.giaThue || null}, ${body.phiDichVu || null},
-      ${body.trangThai || "Trong"}, ${body.ghiChu || null}
+      ${body.trangThai || "Trống"}, ${body.ghiChu || null}
     )
   `;
   return c.json({ success: true, message: "Them dia diem thanh cong", data: { maDd } });

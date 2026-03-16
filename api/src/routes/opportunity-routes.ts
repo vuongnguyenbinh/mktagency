@@ -89,12 +89,21 @@ opportunities.post("/", async (c) => {
       ${body.tenCongTy || null}, ${body.mst || null},
       ${body.nhuCauDt || null}, ${body.nganSach || null},
       ${body.khuVuc || null}, ${body.ddQuanTam || null},
-      ${"Moi"}, ${body.danhGia || "Suy nghi"},
+      ${"Mới"}, ${body.danhGia || "Suy nghĩ"},
       ${body.phuTrach || "SYSTEM"},
       ${`[${new Date().toLocaleDateString("vi-VN")}] Tao moi`},
       ${now}, ${now}
     )
   `;
+
+  // Auto-update customer status when linked to an opportunity
+  if (body.maKh) {
+    await sql`
+      UPDATE khach_hang SET trang_thai = 'Đã gán cơ hội'
+      WHERE ma_kh = ${body.maKh} AND (trang_thai = 'Mới' OR trang_thai IS NULL)
+    `;
+  }
+
   return c.json({ success: true, message: "Them co hoi thanh cong", data: { maCh } });
 });
 
@@ -122,9 +131,9 @@ opportunities.put("/:id", async (c) => {
   `;
 
   // Set success/failure date if stage changed
-  if (body.giaiDoan === "Thanh cong") {
+  if (body.giaiDoan === "Thành công") {
     await sql`UPDATE co_hoi SET ngay_thanh_cong = ${now} WHERE ma_ch = ${maCh}`;
-  } else if (body.giaiDoan === "That bai") {
+  } else if (body.giaiDoan === "Thất bại") {
     await sql`UPDATE co_hoi SET ngay_that_bai = ${now} WHERE ma_ch = ${maCh}`;
   }
 
