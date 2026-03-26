@@ -54,6 +54,13 @@ app.get("/api/expiring-contracts", async (c) => {
   return c.json({ success: true, data: rows });
 });
 
+// Latest exchange rate
+app.get("/api/exchange-rate", async (c) => {
+  const [row] = await sql`SELECT ty_gia, ngay_cap_nhat FROM ty_gia WHERE dong_tien = 'USD' ORDER BY ngay_cap_nhat DESC LIMIT 1`;
+  if (!row) return c.json({ success: false, message: "No rate available" }, 404);
+  return c.json({ success: true, data: { usdVnd: Number((row as any).ty_gia), updatedAt: (row as any).ngay_cap_nhat } });
+});
+
 // Mount routes
 app.route("/api", auth);
 app.route("/api/dashboard", dashboard);

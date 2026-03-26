@@ -1976,13 +1976,15 @@
       async function populateEmployeeFilter() {
         const result = await apiCall("getOpportunities", {});
         if (result && result.success) {
-          const employees = [
-            ...new Set(result.data.map((ch) => ch.phu_trach).filter(Boolean)),
-          ];
+          // Build unique map of ma_nv → ho_ten for filter dropdown
+          const empMap = new Map();
+          result.data.forEach((ch) => {
+            if (ch.phu_trach) empMap.set(ch.phu_trach, ch.ten_phu_trach || ch.phu_trach);
+          });
           const select = document.getElementById("filterPhuTrach");
           select.innerHTML =
             '<option value="">Tất cả nhân viên</option>' +
-            employees.map((e) => `<option value="${e}">${e}</option>`).join("");
+            [...empMap.entries()].map(([id, name]) => `<option value="${id}">${name}</option>`).join("");
         }
       }
 
@@ -2528,6 +2530,8 @@
         document.getElementById("contractsLoading").style.display = "flex";
         document.getElementById("contractsContent").style.display = "none";
 
+        // Ensure exchange rate is loaded for VND conversion display
+        await getExchangeRate();
         const result = await apiCall("getContracts", {});
         if (result && result.success) {
           const search = (
@@ -2552,14 +2556,26 @@
             ${renderSortHeader("contracts", "ma_hd", "Số HĐ", "loadContracts")}
             ${renderSortHeader("contracts", "ten_ben_thue", "Bên thuê", "loadContracts")}
             ${renderSortHeader("contracts", "ten_dia_diem", "Địa điểm", "loadContracts")}
-            ${renderSortHeader("contracts", "gia_thue", "Giá thuê", "loadContracts")}
-            ${renderSortHeader("contracts", "ngay_kt", "Ngày KT", "loadContracts")}
+            ${renderSortHeader("contracts", "gia_thue_usd", "Giá thuê", "loadContracts")}
+            ${renderSortHeader("contracts", "ngay_bat_dau", "Ngày BĐ", "loadContracts")}
+            ${renderSortHeader("contracts", "ngay_ket_thuc", "Ngày KT", "loadContracts")}
+            ${renderSortHeader("contracts", "ky_tt_tiep_theo", "TT tiếp theo", "loadContracts")}
             ${renderSortHeader("contracts", "trang_thai", "Trạng thái", "loadContracts")}
             <th>Thao tác</th>
           </tr>`;
 
+          // Format USD price with VND conversion
+          const rate = _cachedRate || 25850;
+          function fmtPrice(hd) {
+            if (hd.gia_thue_usd) {
+              const vnd = Math.round(hd.gia_thue_usd * rate);
+              return `<div>$${Number(hd.gia_thue_usd).toLocaleString("en-US")}</div><div style="font-size:11px;color:var(--gray-text)">≈ ${vnd.toLocaleString("vi-VN")} ₫</div>`;
+            }
+            return hd.gia_thue ? formatCurrency(hd.gia_thue) : "-";
+          }
+
           document.getElementById("contractsContent").innerHTML =
-            `<div class="table-container"><table><thead>${headers}</thead><tbody>${paged.map((hd) => `<tr><td><span class="badge badge-info">${hd.ma_hd}</span></td><td style="font-weight:500">${hd.ten_ben_thue}</td><td>${hd.ten_dia_diem}</td><td>${formatCurrency(hd.gia_thue)}</td><td>${formatDate(hd.ngay_kt)}</td><td><span class="badge ${getStatusBadge(hd.trang_thai)}">${hd.trang_thai}</span></td><td class="action-buttons"><button class="btn-icon btn-edit" onclick="editContract('${hd.ma_hd}')" title="Sửa"><i data-lucide="pencil"></i></button><button class="btn-icon btn-delete" onclick="deleteContract('${hd.ma_hd}')" title="Xóa"><i data-lucide="trash-2"></i></button></td></tr>`).join("")}</tbody></table></div>` +
+            `<div class="table-container"><table><thead>${headers}</thead><tbody>${paged.map((hd) => `<tr><td><span class="badge badge-info">${hd.ma_hd}</span></td><td style="font-weight:500">${hd.ten_ben_thue}</td><td>${hd.ten_dia_diem || hd.dia_diem || "-"}</td><td>${fmtPrice(hd)}</td><td>${formatDate(hd.ngay_bat_dau)}</td><td>${formatDate(hd.ngay_ket_thuc)}</td><td>${hd.ky_tt_tiep_theo || "-"}</td><td><span class="badge ${getStatusBadge(hd.trang_thai)}">${hd.trang_thai}</span></td><td class="action-buttons"><button class="btn-icon btn-edit" onclick="editContract('${hd.ma_hd}')" title="Sửa"><i data-lucide="pencil"></i></button><button class="btn-icon btn-delete" onclick="deleteContract('${hd.ma_hd}')" title="Xóa"><i data-lucide="trash-2"></i></button></td></tr>`).join("")}</tbody></table></div>` +
             renderPagination("contracts", total, loadContracts);
           lucide.createIcons();
         } else {
@@ -2635,6 +2651,27 @@
         `)
           .join("");
 
+        // Add file attachment section for contracts (edit mode only)
+        const fileSection = document.getElementById("contractFileSection");
+        if (fileSection) fileSection.remove();
+        if (type === "contract" && id) {
+          const section = document.createElement("div");
+          section.id = "contractFileSection";
+          section.innerHTML = `
+            <hr style="margin:16px 0;border-color:var(--border)">
+            <h4 style="margin-bottom:8px">Tài liệu đính kèm</h4>
+            <div style="display:flex;gap:8px;margin-bottom:12px">
+              <input type="file" id="contractFileInput" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf" multiple style="flex:1" />
+              <button type="button" class="btn btn-primary" onclick="uploadContractFiles('${id}')" style="white-space:nowrap">Upload</button>
+            </div>
+            <div id="contractFileList" style="display:flex;flex-wrap:wrap;gap:8px">
+              <span style="color:var(--gray-text)">Đang tải...</span>
+            </div>
+          `;
+          formFields.parentElement.appendChild(section);
+          loadContractFiles(id);
+        }
+
         document.getElementById("editModal").style.display = "flex";
       }
 
@@ -2707,15 +2744,15 @@
         } else if (type === "contract") {
           const payload = {
             tenBenThue: data.tenBenThue,
-            maDd: currentEditData?.ma_dd || "",
-            tenDiaDiem: data.tenDiaDiem,
-            dienTich: parseFloat(data.dienTich) || 0,
-            giaThue: parseFloat(data.giaThue) || 0,
-            phiDichVu: parseFloat(data.phiDichVu) || 0,
-            tienCoc: parseFloat(data.tienCoc) || 0,
+            maDiaDiem: data.maDiaDiem || currentEditData?.ma_dia_diem || null,
+            dongTien: data.dongTien || "USD",
+            giaThueUsd: parseFloat(data.giaThueUsd) || null,
+            phiDichVuUsd: parseFloat(data.phiDichVuUsd) || null,
+            tienCocUsd: parseFloat(data.tienCocUsd) || null,
             kyThanhToan: data.kyThanhToan,
-            ngayBd: data.ngayBd,
-            ngayKt: data.ngayKt,
+            ngayThanhToan: parseInt(data.ngayThanhToan) || 1,
+            ngayBatDau: data.ngayBd || null,
+            ngayKetThuc: data.ngayKt || null,
             trangThai: data.trangThai || "Đang thuê",
             ghiChu: data.ghiChu,
           };
@@ -2821,7 +2858,7 @@
         const employees = empResult.success ? empResult.data : [];
         const empOptions = [
           { value: "", label: "-- Chọn NV --" },
-          ...employees.map((nv) => ({ value: nv.ho_ten, label: nv.ho_ten })),
+          ...employees.map((nv) => ({ value: nv.ma_nv, label: nv.ho_ten })),
         ];
 
         openModal("Sửa cơ hội", "opportunity", id, [
@@ -2868,11 +2905,26 @@
       }
 
       async function editContract(id) {
-        const result = await apiCall("getContracts", {});
+        const [result, locResult] = await Promise.all([
+          apiCall("getContracts", {}),
+          apiCall("getAllLocations", {}),
+        ]);
         if (!result.success) return alert("Không thể tải dữ liệu");
         const hd = result.data.find((h) => h.ma_hd === id);
         if (!hd) return alert("Không tìm thấy hợp đồng");
         currentEditData = hd;
+
+        const locations = locResult && locResult.success ? locResult.data : [];
+        const locationOptions = [
+          { value: "", label: "-- Chọn địa điểm --" },
+          ...locations.map((dd) => ({
+            value: dd.ma_dd,
+            label: `${dd.ten_hien_thi || dd.toa_nha || dd.ma_dd} (${dd.dien_tich || 0}m²)`,
+          })),
+        ];
+
+        // Format dates from ISO to YYYY-MM-DD for date inputs
+        const fmtDate = (d) => d ? new Date(d).toISOString().split("T")[0] : "";
 
         openModal("Sửa hợp đồng", "contract", id, [
           {
@@ -2880,31 +2932,18 @@
             label: "Tên bên thuê *",
             value: hd.ten_ben_thue,
           },
-          { name: "tenDiaDiem", label: "Địa điểm", value: hd.ten_dia_diem },
+          { name: "maDiaDiem", label: "Địa điểm", value: hd.ma_dia_diem || "", type: "select", options: locationOptions },
           {
             name: "dienTich",
             label: "Diện tích (m²)",
-            value: hd.dien_tich,
+            value: hd.dien_tich || "",
             type: "number",
+            readonly: true,
           },
-          {
-            name: "giaThue",
-            label: "Giá thuê (VNĐ/tháng)",
-            value: hd.gia_thue,
-            type: "number",
-          },
-          {
-            name: "phiDichVu",
-            label: "Phí dịch vụ",
-            value: hd.phi_dich_vu,
-            type: "number",
-          },
-          {
-            name: "tienCoc",
-            label: "Tiền cọc",
-            value: hd.tien_coc,
-            type: "number",
-          },
+          { name: "dongTien", label: "Đơn vị tiền", value: hd.dong_tien || "USD", type: "select", options: ["USD", "VND"] },
+          { name: "giaThueUsd", label: "Giá thuê (USD/tháng)", value: hd.gia_thue_usd || "", type: "number" },
+          { name: "phiDichVuUsd", label: "Phí dịch vụ (USD)", value: hd.phi_dich_vu_usd || "", type: "number" },
+          { name: "tienCocUsd", label: "Tiền cọc (USD)", value: hd.tien_coc_usd || "", type: "number" },
           {
             name: "kyThanhToan",
             label: "Kỳ thanh toán",
@@ -2913,15 +2952,21 @@
             options: ["Tháng", "Quý", "Năm"],
           },
           {
+            name: "ngayThanhToan",
+            label: "Ngày thanh toán (ngày trong tháng)",
+            value: hd.ngay_thanh_toan || "1",
+            type: "number",
+          },
+          {
             name: "ngayBd",
             label: "Ngày bắt đầu",
-            value: hd.ngay_bd,
+            value: fmtDate(hd.ngay_bat_dau),
             type: "date",
           },
           {
             name: "ngayKt",
             label: "Ngày kết thúc",
-            value: hd.ngay_kt,
+            value: fmtDate(hd.ngay_ket_thuc),
             type: "date",
           },
           {
@@ -2938,6 +2983,76 @@
             type: "textarea",
           },
         ]);
+        setupContractLocationAutoFill(locations);
+        setupCurrencyToggle();
+      }
+
+      // ==================== CONTRACT FILE MANAGEMENT ====================
+
+      async function loadContractFiles(maHd) {
+        const container = document.getElementById("contractFileList");
+        if (!container) return;
+        try {
+          const res = await fetch(`${API_BASE}/api/contracts/${maHd}/files`);
+          const result = await res.json();
+          if (!result.success || result.data.length === 0) {
+            container.innerHTML = '<span style="color:var(--gray-text);font-size:13px">Chưa có tài liệu</span>';
+            return;
+          }
+          container.innerHTML = result.data.map((f) => `
+            <div style="border:1px solid var(--border);border-radius:8px;padding:8px;width:140px;text-align:center;position:relative;background:var(--card-bg)">
+              ${f.isImage
+                ? `<img src="${API_BASE}/api/contracts/${maHd}/files/${f.filename}" style="width:100%;height:80px;object-fit:cover;border-radius:4px;cursor:pointer" onclick="previewContractFile('${maHd}','${f.filename}','image')" />`
+                : `<div style="height:80px;display:flex;align-items:center;justify-content:center;cursor:pointer;background:var(--bg);border-radius:4px" onclick="previewContractFile('${maHd}','${f.filename}','pdf')">
+                    <span style="font-size:28px">📄</span>
+                  </div>`
+              }
+              <div style="font-size:11px;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${f.displayName}">${f.displayName}</div>
+              <div style="font-size:10px;color:var(--gray-text)">${(f.size / 1024).toFixed(0)} KB</div>
+              <button type="button" onclick="deleteContractFile('${maHd}','${f.filename}')" style="position:absolute;top:2px;right:2px;background:rgba(220,38,38,0.8);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:12px;cursor:pointer;line-height:1" title="Xóa">×</button>
+            </div>
+          `).join("");
+        } catch {
+          container.innerHTML = '<span style="color:var(--error-text)">Lỗi tải file</span>';
+        }
+      }
+
+      async function uploadContractFiles(maHd) {
+        const input = document.getElementById("contractFileInput");
+        if (!input.files.length) return alert("Chọn file trước");
+        for (const file of input.files) {
+          const formData = new FormData();
+          formData.append("file", file);
+          try {
+            const res = await fetch(`${API_BASE}/api/contracts/${maHd}/files`, {
+              method: "POST",
+              body: formData,
+            });
+            const result = await res.json();
+            if (!result.success) alert(`Lỗi upload ${file.name}: ${result.message}`);
+          } catch (e) {
+            alert(`Lỗi upload ${file.name}: ${e.message}`);
+          }
+        }
+        input.value = "";
+        loadContractFiles(maHd);
+      }
+
+      function previewContractFile(maHd, filename, type) {
+        const url = `${API_BASE}/api/contracts/${maHd}/files/${filename}`;
+        window.open(url, "_blank");
+      }
+
+      async function deleteContractFile(maHd, filename) {
+        if (!confirm("Xác nhận xóa file này?")) return;
+        try {
+          const res = await fetch(`${API_BASE}/api/contracts/${maHd}/files/${filename}`, { method: "DELETE" });
+          const result = await res.json();
+          if (result.success) loadContractFiles(maHd);
+          else alert(result.message);
+        } catch (e) {
+          alert(`Lỗi: ${e.message}`);
+        }
       }
 
       // ==================== DELETE FUNCTIONS ====================
@@ -3225,31 +3340,27 @@
         await addOpportunity({ maKh, tenKh, sdt, tenCongTy });
       }
 
-      function addContract() {
+      async function addContract() {
         currentEditData = null;
         const today = new Date().toISOString().split("T")[0];
+        // Fetch all locations (flat list with ma_dd, ten_hien_thi, dien_tich)
+        const locResult = await apiCall("getAllLocations", {});
+        const locations = locResult && locResult.success ? locResult.data : [];
+        const locationOptions = [
+          { value: "", label: "-- Chọn địa điểm --" },
+          ...locations.map((dd) => ({
+            value: dd.ma_dd,
+            label: `${dd.ten_hien_thi || dd.toa_nha || dd.ma_dd} (${dd.dien_tich || 0}m²)`,
+          })),
+        ];
         openModal("Thêm hợp đồng", "contract", "", [
           { name: "tenBenThue", label: "Tên bên thuê *", value: "" },
-          { name: "tenDiaDiem", label: "Địa điểm", value: "" },
-          {
-            name: "dienTich",
-            label: "Diện tích (m²)",
-            value: "",
-            type: "number",
-          },
-          {
-            name: "giaThue",
-            label: "Giá thuê (VNĐ/tháng)",
-            value: "",
-            type: "number",
-          },
-          {
-            name: "phiDichVu",
-            label: "Phí dịch vụ",
-            value: "",
-            type: "number",
-          },
-          { name: "tienCoc", label: "Tiền cọc", value: "", type: "number" },
+          { name: "maDiaDiem", label: "Địa điểm", value: "", type: "select", options: locationOptions },
+          { name: "dienTich", label: "Diện tích (m²)", value: "", type: "number", readonly: true },
+          { name: "dongTien", label: "Đơn vị tiền", value: "USD", type: "select", options: ["USD", "VND"] },
+          { name: "giaThueUsd", label: "Giá thuê (USD/tháng)", value: "", type: "number" },
+          { name: "phiDichVuUsd", label: "Phí dịch vụ (USD)", value: "", type: "number" },
+          { name: "tienCocUsd", label: "Tiền cọc (USD)", value: "", type: "number" },
           {
             name: "kyThanhToan",
             label: "Kỳ thanh toán",
@@ -3257,10 +3368,101 @@
             type: "select",
             options: ["Tháng", "Quý", "Năm"],
           },
+          { name: "ngayThanhToan", label: "Ngày thanh toán (ngày trong tháng)", value: "1", type: "number" },
           { name: "ngayBd", label: "Ngày bắt đầu", value: today, type: "date" },
           { name: "ngayKt", label: "Ngày kết thúc", value: "", type: "date" },
           { name: "ghiChu", label: "Ghi chú", value: "", type: "textarea" },
         ]);
+        setupContractLocationAutoFill(locations);
+        setupCurrencyToggle();
+      }
+
+      // Auto-fill contract fields when location is selected
+      // Cache exchange rate for session
+      let _cachedRate = null;
+      async function getExchangeRate() {
+        if (_cachedRate) return _cachedRate;
+        try {
+          const res = await fetch(`${API_BASE}/api/exchange-rate`);
+          const data = await res.json();
+          if (data.success) _cachedRate = data.data.usdVnd;
+        } catch {}
+        return _cachedRate || 25850; // fallback
+      }
+
+      function setupContractLocationAutoFill(locations) {
+        const locSelect = document.getElementById("field_maDiaDiem");
+        if (!locSelect) return;
+        locSelect.addEventListener("change", async () => {
+          const loc = locations.find((dd) => dd.ma_dd === locSelect.value);
+          if (loc) {
+            const dtField = document.getElementById("field_dienTich");
+            if (dtField) dtField.value = loc.dien_tich || "";
+            // Auto-fill USD price (convert from VND location price)
+            const rate = await getExchangeRate();
+            const usdField = document.getElementById("field_giaThueUsd");
+            if (usdField && loc.gia_thue) {
+              usdField.value = (parseFloat(loc.gia_thue) / rate).toFixed(2);
+              updateVndPreview();
+            }
+          }
+        });
+      }
+
+      // Toggle currency labels and show VND conversion preview
+      function setupCurrencyToggle() {
+        const dongTienSelect = document.getElementById("field_dongTien");
+        if (!dongTienSelect) return;
+
+        // Add VND preview element after USD fields
+        const usdFields = ["giaThueUsd", "phiDichVuUsd", "tienCocUsd"];
+        usdFields.forEach((name) => {
+          const field = document.getElementById(`field_${name}`);
+          if (!field) return;
+          let preview = document.getElementById(`vnd_preview_${name}`);
+          if (!preview) {
+            preview = document.createElement("div");
+            preview.id = `vnd_preview_${name}`;
+            preview.style.cssText = "font-size:12px;color:var(--gray-text);margin-top:2px";
+            field.parentElement.appendChild(preview);
+          }
+          field.addEventListener("input", () => updateVndPreview());
+        });
+
+        dongTienSelect.addEventListener("change", () => {
+          const isUsd = dongTienSelect.value === "USD";
+          usdFields.forEach((name) => {
+            const label = document.querySelector(`label[for="field_${name}"]`);
+            const preview = document.getElementById(`vnd_preview_${name}`);
+            if (label) {
+              const baseName = name === "giaThueUsd" ? "Giá thuê" : name === "phiDichVuUsd" ? "Phí dịch vụ" : "Tiền cọc";
+              label.textContent = isUsd ? `${baseName} (USD)` : `${baseName} (VNĐ)`;
+            }
+            if (preview) preview.style.display = isUsd ? "block" : "none";
+          });
+          if (isUsd) updateVndPreview();
+        });
+
+        // Initial preview
+        updateVndPreview();
+      }
+
+      async function updateVndPreview() {
+        const rate = await getExchangeRate();
+        const dongTien = document.getElementById("field_dongTien")?.value;
+        if (dongTien !== "USD") return;
+
+        ["giaThueUsd", "phiDichVuUsd", "tienCocUsd"].forEach((name) => {
+          const field = document.getElementById(`field_${name}`);
+          const preview = document.getElementById(`vnd_preview_${name}`);
+          if (!field || !preview) return;
+          const val = parseFloat(field.value);
+          if (val && !isNaN(val)) {
+            preview.textContent = `≈ ${(val * rate).toLocaleString("vi-VN")} VNĐ (tỉ giá: ${rate.toLocaleString("vi-VN")})`;
+          } else {
+            preview.textContent = "";
+          }
+        });
       }
 
       function addLocation() {
@@ -3391,7 +3593,7 @@
           ch.khu_vuc,
           ch.giai_doan,
           ch.danh_gia,
-          ch.phu_trach,
+          ch.ten_phu_trach || ch.phu_trach,
           ch.ngay_tao,
         ]);
 

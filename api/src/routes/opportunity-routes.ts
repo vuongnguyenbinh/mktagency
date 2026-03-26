@@ -4,71 +4,62 @@ import { generateId } from "../utils/generate-id";
 
 const opportunities = new Hono();
 
-// List opportunities with optional filters
+// List opportunities with LEFT JOIN to resolve phu_trach (ma_nv) → ho_ten
 opportunities.get("/", async (c) => {
   const { giaiDoan, phuTrach, search } = c.req.query();
-  const conditions: string[] = [];
-  const values: any = {};
+  const pattern = search ? `%${search}%` : null;
 
-  let query = "SELECT * FROM co_hoi WHERE 1=1";
-
-  // Build dynamic query using tagged templates with conditions
-  if (giaiDoan && phuTrach && search) {
-    const pattern = `%${search}%`;
-    const rows = await sql`
-      SELECT * FROM co_hoi
-      WHERE giai_doan = ${giaiDoan} AND phu_trach = ${phuTrach}
+  let rows;
+  if (giaiDoan && phuTrach && pattern) {
+    rows = await sql`
+      SELECT co_hoi.*, nv.ho_ten as ten_phu_trach
+      FROM co_hoi LEFT JOIN nhan_vien nv ON co_hoi.phu_trach = nv.ma_nv
+      WHERE giai_doan = ${giaiDoan} AND co_hoi.phu_trach = ${phuTrach}
         AND (ten_kh ILIKE ${pattern} OR ten_cong_ty ILIKE ${pattern} OR sdt ILIKE ${pattern})
-      ORDER BY ngay_tao DESC
-    `;
-    return c.json({ success: true, data: rows, total: rows.length });
-  }
-  if (giaiDoan && phuTrach) {
-    const rows = await sql`
-      SELECT * FROM co_hoi WHERE giai_doan = ${giaiDoan} AND phu_trach = ${phuTrach}
-      ORDER BY ngay_tao DESC
-    `;
-    return c.json({ success: true, data: rows, total: rows.length });
-  }
-  if (giaiDoan && search) {
-    const pattern = `%${search}%`;
-    const rows = await sql`
-      SELECT * FROM co_hoi
+      ORDER BY ngay_tao DESC`;
+  } else if (giaiDoan && phuTrach) {
+    rows = await sql`
+      SELECT co_hoi.*, nv.ho_ten as ten_phu_trach
+      FROM co_hoi LEFT JOIN nhan_vien nv ON co_hoi.phu_trach = nv.ma_nv
+      WHERE giai_doan = ${giaiDoan} AND co_hoi.phu_trach = ${phuTrach}
+      ORDER BY ngay_tao DESC`;
+  } else if (giaiDoan && pattern) {
+    rows = await sql`
+      SELECT co_hoi.*, nv.ho_ten as ten_phu_trach
+      FROM co_hoi LEFT JOIN nhan_vien nv ON co_hoi.phu_trach = nv.ma_nv
       WHERE giai_doan = ${giaiDoan}
         AND (ten_kh ILIKE ${pattern} OR ten_cong_ty ILIKE ${pattern} OR sdt ILIKE ${pattern})
-      ORDER BY ngay_tao DESC
-    `;
-    return c.json({ success: true, data: rows, total: rows.length });
-  }
-  if (phuTrach && search) {
-    const pattern = `%${search}%`;
-    const rows = await sql`
-      SELECT * FROM co_hoi
-      WHERE phu_trach = ${phuTrach}
+      ORDER BY ngay_tao DESC`;
+  } else if (phuTrach && pattern) {
+    rows = await sql`
+      SELECT co_hoi.*, nv.ho_ten as ten_phu_trach
+      FROM co_hoi LEFT JOIN nhan_vien nv ON co_hoi.phu_trach = nv.ma_nv
+      WHERE co_hoi.phu_trach = ${phuTrach}
         AND (ten_kh ILIKE ${pattern} OR ten_cong_ty ILIKE ${pattern} OR sdt ILIKE ${pattern})
-      ORDER BY ngay_tao DESC
-    `;
-    return c.json({ success: true, data: rows, total: rows.length });
-  }
-  if (giaiDoan) {
-    const rows = await sql`SELECT * FROM co_hoi WHERE giai_doan = ${giaiDoan} ORDER BY ngay_tao DESC`;
-    return c.json({ success: true, data: rows, total: rows.length });
-  }
-  if (phuTrach) {
-    const rows = await sql`SELECT * FROM co_hoi WHERE phu_trach = ${phuTrach} ORDER BY ngay_tao DESC`;
-    return c.json({ success: true, data: rows, total: rows.length });
-  }
-  if (search) {
-    const pattern = `%${search}%`;
-    const rows = await sql`
-      SELECT * FROM co_hoi
+      ORDER BY ngay_tao DESC`;
+  } else if (giaiDoan) {
+    rows = await sql`
+      SELECT co_hoi.*, nv.ho_ten as ten_phu_trach
+      FROM co_hoi LEFT JOIN nhan_vien nv ON co_hoi.phu_trach = nv.ma_nv
+      WHERE giai_doan = ${giaiDoan} ORDER BY ngay_tao DESC`;
+  } else if (phuTrach) {
+    rows = await sql`
+      SELECT co_hoi.*, nv.ho_ten as ten_phu_trach
+      FROM co_hoi LEFT JOIN nhan_vien nv ON co_hoi.phu_trach = nv.ma_nv
+      WHERE co_hoi.phu_trach = ${phuTrach} ORDER BY ngay_tao DESC`;
+  } else if (pattern) {
+    rows = await sql`
+      SELECT co_hoi.*, nv.ho_ten as ten_phu_trach
+      FROM co_hoi LEFT JOIN nhan_vien nv ON co_hoi.phu_trach = nv.ma_nv
       WHERE ten_kh ILIKE ${pattern} OR ten_cong_ty ILIKE ${pattern} OR sdt ILIKE ${pattern}
-      ORDER BY ngay_tao DESC
-    `;
-    return c.json({ success: true, data: rows, total: rows.length });
+      ORDER BY ngay_tao DESC`;
+  } else {
+    rows = await sql`
+      SELECT co_hoi.*, nv.ho_ten as ten_phu_trach
+      FROM co_hoi LEFT JOIN nhan_vien nv ON co_hoi.phu_trach = nv.ma_nv
+      ORDER BY ngay_tao DESC`;
   }
 
-  const rows = await sql`SELECT * FROM co_hoi ORDER BY ngay_tao DESC`;
   return c.json({ success: true, data: rows, total: rows.length });
 });
 
@@ -90,7 +81,7 @@ opportunities.post("/", async (c) => {
       ${body.nhuCauDt || null}, ${body.nganSach || null},
       ${body.khuVuc || null}, ${body.ddQuanTam || null},
       ${"Mới"}, ${body.danhGia || "Suy nghĩ"},
-      ${body.phuTrach || "SYSTEM"},
+      ${body.phuTrach || null},
       ${`[${new Date().toLocaleDateString("vi-VN")}] Tao moi`},
       ${now}, ${now}
     )
