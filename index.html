@@ -1628,6 +1628,12 @@
             headers,
             body: route.method !== "GET" ? JSON.stringify(params) : undefined,
           });
+          // Handle 401 — redirect to login
+          if (response.status === 401) {
+            localStorage.removeItem("authToken");
+            showLoginScreen();
+            return { success: false, message: "Phiên đăng nhập hết hạn" };
+          }
           const result = await response.json();
           console.log(`API Response [${action}]:`, result);
           return result;
@@ -2989,11 +2995,17 @@
 
       // ==================== CONTRACT FILE MANAGEMENT ====================
 
+      // Auth headers helper for direct fetch calls
+      function authHeaders(extra = {}) {
+        const token = localStorage.getItem("authToken");
+        return token ? { Authorization: `Bearer ${token}`, ...extra } : extra;
+      }
+
       async function loadContractFiles(maHd) {
         const container = document.getElementById("contractFileList");
         if (!container) return;
         try {
-          const res = await fetch(`${API_BASE}/api/contracts/${maHd}/files`);
+          const res = await fetch(`${API_BASE}/api/contracts/${maHd}/files`, { headers: authHeaders() });
           const result = await res.json();
           if (!result.success || result.data.length === 0) {
             container.innerHTML = '<span style="color:var(--gray-text);font-size:13px">Chưa có tài liệu</span>';
@@ -3026,6 +3038,7 @@
           try {
             const res = await fetch(`${API_BASE}/api/contracts/${maHd}/files`, {
               method: "POST",
+              headers: authHeaders(),
               body: formData,
             });
             const result = await res.json();
@@ -3046,7 +3059,7 @@
       async function deleteContractFile(maHd, filename) {
         if (!confirm("Xác nhận xóa file này?")) return;
         try {
-          const res = await fetch(`${API_BASE}/api/contracts/${maHd}/files/${filename}`, { method: "DELETE" });
+          const res = await fetch(`${API_BASE}/api/contracts/${maHd}/files/${filename}`, { method: "DELETE", headers: authHeaders() });
           const result = await res.json();
           if (result.success) loadContractFiles(maHd);
           else alert(result.message);

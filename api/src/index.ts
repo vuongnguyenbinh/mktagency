@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { serveStatic } from "hono/bun";
 import sql from "./db";
+import { authMiddleware } from "./middleware/auth-middleware";
 
 // Route modules
 import auth from "./routes/auth-routes";
@@ -59,6 +60,17 @@ app.get("/api/exchange-rate", async (c) => {
   const [row] = await sql`SELECT ty_gia, ngay_cap_nhat FROM ty_gia WHERE dong_tien = 'USD' ORDER BY ngay_cap_nhat DESC LIMIT 1`;
   if (!row) return c.json({ success: false, message: "No rate available" }, 404);
   return c.json({ success: true, data: { usdVnd: Number((row as any).ty_gia), updatedAt: (row as any).ngay_cap_nhat } });
+});
+
+// Auth middleware — protect all /api/* except public routes
+app.use("/api/*", async (c, next) => {
+  const path = c.req.path;
+  // Public routes: login, health, exchange rate, n8n webhooks
+  const publicPaths = ["/api/login", "/api/health", "/api/exchange-rate", "/api/n8n"];
+  if (publicPaths.some((p) => path.startsWith(p))) {
+    return next();
+  }
+  return authMiddleware(c, next);
 });
 
 // Mount routes
