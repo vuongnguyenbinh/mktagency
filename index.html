@@ -2565,7 +2565,7 @@
             ${renderSortHeader("contracts", "gia_thue_usd", "Giá thuê", "loadContracts")}
             ${renderSortHeader("contracts", "ngay_bat_dau", "Ngày BĐ", "loadContracts")}
             ${renderSortHeader("contracts", "ngay_ket_thuc", "Ngày KT", "loadContracts")}
-            ${renderSortHeader("contracts", "ky_tt_tiep_theo", "TT tiếp theo", "loadContracts")}
+            ${renderSortHeader("contracts", "ngay_tt_tiep_theo", "TT tiếp theo", "loadContracts")}
             ${renderSortHeader("contracts", "trang_thai", "Trạng thái", "loadContracts")}
             <th>Thao tác</th>
           </tr>`;
@@ -2581,7 +2581,7 @@
           }
 
           document.getElementById("contractsContent").innerHTML =
-            `<div class="table-container"><table><thead>${headers}</thead><tbody>${paged.map((hd) => `<tr><td><span class="badge badge-info">${hd.ma_hd}</span></td><td style="font-weight:500">${hd.ten_ben_thue}</td><td>${hd.ten_dia_diem || hd.dia_diem || "-"}</td><td>${fmtPrice(hd)}</td><td>${formatDate(hd.ngay_bat_dau)}</td><td>${formatDate(hd.ngay_ket_thuc)}</td><td>${hd.ky_tt_tiep_theo || "-"}</td><td><span class="badge ${getStatusBadge(hd.trang_thai)}">${hd.trang_thai}</span></td><td class="action-buttons"><button class="btn-icon btn-edit" onclick="editContract('${hd.ma_hd}')" title="Sửa"><i data-lucide="pencil"></i></button><button class="btn-icon btn-delete" onclick="deleteContract('${hd.ma_hd}')" title="Xóa"><i data-lucide="trash-2"></i></button></td></tr>`).join("")}</tbody></table></div>` +
+            `<div class="table-container"><table><thead>${headers}</thead><tbody>${paged.map((hd) => `<tr><td><span class="badge badge-info">${hd.ma_hd}</span></td><td style="font-weight:500">${hd.ten_ben_thue}</td><td>${hd.ten_dia_diem || hd.dia_diem || "-"}</td><td>${fmtPrice(hd)}</td><td>${formatDate(hd.ngay_bat_dau)}</td><td>${formatDate(hd.ngay_ket_thuc)}</td><td>${formatDate(hd.ngay_tt_tiep_theo)}</td><td><span class="badge ${getStatusBadge(hd.trang_thai)}">${hd.trang_thai}</span></td><td class="action-buttons"><button class="btn-icon btn-edit" onclick="editContract('${hd.ma_hd}')" title="Sửa"><i data-lucide="pencil"></i></button><button class="btn-icon btn-delete" onclick="deleteContract('${hd.ma_hd}')" title="Xóa"><i data-lucide="trash-2"></i></button></td></tr>`).join("")}</tbody></table></div>` +
             renderPagination("contracts", total, loadContracts);
           lucide.createIcons();
         } else {
@@ -2755,8 +2755,7 @@
             giaThueUsd: parseFloat(data.giaThueUsd) || null,
             phiDichVuUsd: parseFloat(data.phiDichVuUsd) || null,
             tienCocUsd: parseFloat(data.tienCocUsd) || null,
-            kyThanhToan: data.kyThanhToan,
-            ngayThanhToan: parseInt(data.ngayThanhToan) || 1,
+            ngayTtTiepTheo: data.ngayTtTiepTheo || null,
             ngayBatDau: data.ngayBd || null,
             ngayKetThuc: data.ngayKt || null,
             trangThai: data.trangThai || "Đang thuê",
@@ -2951,17 +2950,10 @@
           { name: "phiDichVuUsd", label: "Phí dịch vụ (USD)", value: hd.phi_dich_vu_usd || "", type: "number" },
           { name: "tienCocUsd", label: "Tiền cọc (USD)", value: hd.tien_coc_usd || "", type: "number" },
           {
-            name: "kyThanhToan",
-            label: "Kỳ thanh toán",
-            value: hd.ky_thanh_toan,
-            type: "select",
-            options: ["Tháng", "Quý", "Năm"],
-          },
-          {
-            name: "ngayThanhToan",
-            label: "Ngày thanh toán (ngày trong tháng)",
-            value: hd.ngay_thanh_toan || "1",
-            type: "number",
+            name: "ngayTtTiepTheo",
+            label: "Ngày thanh toán tiếp theo",
+            value: fmtDate(hd.ngay_tt_tiep_theo),
+            type: "date",
           },
           {
             name: "ngayBd",
@@ -3374,14 +3366,7 @@
           { name: "giaThueUsd", label: "Giá thuê (USD/tháng)", value: "", type: "number" },
           { name: "phiDichVuUsd", label: "Phí dịch vụ (USD)", value: "", type: "number" },
           { name: "tienCocUsd", label: "Tiền cọc (USD)", value: "", type: "number" },
-          {
-            name: "kyThanhToan",
-            label: "Kỳ thanh toán",
-            value: "Tháng",
-            type: "select",
-            options: ["Tháng", "Quý", "Năm"],
-          },
-          { name: "ngayThanhToan", label: "Ngày thanh toán (ngày trong tháng)", value: "1", type: "number" },
+          { name: "ngayTtTiepTheo", label: "Ngày thanh toán tiếp theo", value: "", type: "date" },
           { name: "ngayBd", label: "Ngày bắt đầu", value: today, type: "date" },
           { name: "ngayKt", label: "Ngày kết thúc", value: "", type: "date" },
           { name: "ghiChu", label: "Ghi chú", value: "", type: "textarea" },
@@ -3629,7 +3614,7 @@
           "Giá thuê",
           "Phí DV",
           "Tiền cọc",
-          "Kỳ TT",
+          "TT tiếp theo",
           "Ngày BĐ",
           "Ngày KT",
           "Trạng thái",
@@ -3643,9 +3628,9 @@
           hd.gia_thue,
           hd.phi_dich_vu,
           hd.tien_coc,
-          hd.ky_thanh_toan,
-          hd.ngay_bd,
-          hd.ngay_kt,
+          hd.ngay_tt_tiep_theo,
+          hd.ngay_bat_dau,
+          hd.ngay_ket_thuc,
           hd.trang_thai,
           hd.ghi_chu,
         ]);
@@ -3786,9 +3771,9 @@
             giaThue: parseFloat(row["Giá thuê"] || row["gia_thue"]) || 0,
             phiDichVu: parseFloat(row["Phí DV"] || row["phi_dich_vu"]) || 0,
             tienCoc: parseFloat(row["Tiền cọc"] || row["tien_coc"]) || 0,
-            kyThanhToan: row["Kỳ TT"] || row["ky_thanh_toan"] || "Tháng",
-            ngayBd: row["Ngày BĐ"] || row["ngay_bd"] || "",
-            ngayKt: row["Ngày KT"] || row["ngay_kt"] || "",
+            ngayTtTiepTheo: row["TT tiếp theo"] || row["ngay_tt_tiep_theo"] || "",
+            ngayBd: row["Ngày BĐ"] || row["ngay_bat_dau"] || "",
+            ngayKt: row["Ngày KT"] || row["ngay_ket_thuc"] || "",
             ghiChu: row["Ghi chú"] || row["ghi_chu"] || "",
           });
           if (res.success) success++;

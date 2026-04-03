@@ -41,26 +41,7 @@ contracts.get("/", async (c) => {
       ORDER BY ngay_tao DESC`;
   }
 
-  // Compute next payment date for each contract
-  const data = rows.map((hd: any) => {
-    let ky_tt_tiep_theo = null;
-    if (hd.ngay_thanh_toan && hd.trang_thai !== "Thanh lý" && hd.trang_thai !== "Hết hạn") {
-      const today = new Date();
-      const day = Math.min(hd.ngay_thanh_toan, 28); // cap at 28 to avoid invalid dates
-      let nextDate = new Date(today.getFullYear(), today.getMonth(), day);
-      if (nextDate <= today) {
-        nextDate = new Date(today.getFullYear(), today.getMonth() + 1, day);
-      }
-      // Use local date parts to avoid UTC timezone shift
-      const y = nextDate.getFullYear();
-      const m = String(nextDate.getMonth() + 1).padStart(2, "0");
-      const d = String(nextDate.getDate()).padStart(2, "0");
-      ky_tt_tiep_theo = `${y}-${m}-${d}`;
-    }
-    return { ...hd, ky_tt_tiep_theo };
-  });
-
-  return c.json({ success: true, data, total: data.length });
+  return c.json({ success: true, data: rows, total: rows.length });
 });
 
 // Resolve location display name from ma_dd
@@ -82,7 +63,7 @@ contracts.post("/", async (c) => {
       ma_hd, so_hd, ma_ch, ma_dia_diem, dia_diem, loai_kh,
       ten_ben_thue, dia_chi_ben_thue, mst, nguoi_dai_dien, sdt_dai_dien,
       ngay_bat_dau, ngay_ket_thuc, gia_thue, phi_dich_vu, tong_thang,
-      tien_coc, ky_thanh_toan, ngay_thanh_toan, trang_thai, ghi_chu,
+      tien_coc, ngay_tt_tiep_theo, trang_thai, ghi_chu,
       dong_tien, gia_thue_usd, phi_dich_vu_usd, tien_coc_usd
     ) VALUES (
       ${maHd}, ${body.soHd || null}, ${body.maCh || null},
@@ -94,7 +75,7 @@ contracts.post("/", async (c) => {
       ${body.ngayKetThuc || body.ngayKt || null},
       ${body.giaThue || null}, ${body.phiDichVu || null},
       ${body.tongThang || null}, ${body.tienCoc || null},
-      ${body.kyThanhToan || null}, ${body.ngayThanhToan || null},
+      ${body.ngayTtTiepTheo || null},
       ${body.trangThai || "Đang thuê"}, ${body.ghiChu || null},
       ${body.dongTien || "USD"}, ${body.giaThueUsd || null},
       ${body.phiDichVuUsd || null}, ${body.tienCocUsd || null}
@@ -127,8 +108,7 @@ contracts.put("/:id", async (c) => {
       ngay_ket_thuc = ${body.ngayKetThuc || body.ngayKt || null},
       gia_thue = ${body.giaThue || null}, phi_dich_vu = ${body.phiDichVu || null},
       tong_thang = ${body.tongThang || null}, tien_coc = ${body.tienCoc || null},
-      ky_thanh_toan = ${body.kyThanhToan || null},
-      ngay_thanh_toan = ${body.ngayThanhToan || null},
+      ngay_tt_tiep_theo = ${body.ngayTtTiepTheo || null},
       trang_thai = ${body.trangThai || null}, ghi_chu = ${body.ghiChu || null},
       dong_tien = ${body.dongTien || "USD"},
       gia_thue_usd = ${body.giaThueUsd || null},
@@ -251,7 +231,7 @@ contracts.delete("/:id/files/:filename", async (c) => {
 // Export contracts as CSV
 contracts.get("/export/csv", async (c) => {
   const rows = await sql`SELECT * FROM hop_dong ORDER BY ngay_tao DESC`;
-  const headers = ["ma_hd", "so_hd", "ten_ben_thue", "dia_diem", "loai_kh", "mst", "nguoi_dai_dien", "sdt_dai_dien", "ngay_bat_dau", "ngay_ket_thuc", "gia_thue", "phi_dich_vu", "tong_thang", "tien_coc", "ky_thanh_toan", "ngay_thanh_toan", "trang_thai", "ghi_chu"];
+  const headers = ["ma_hd", "so_hd", "ten_ben_thue", "dia_diem", "loai_kh", "mst", "nguoi_dai_dien", "sdt_dai_dien", "ngay_bat_dau", "ngay_ket_thuc", "gia_thue", "gia_thue_usd", "phi_dich_vu", "tong_thang", "tien_coc", "ngay_tt_tiep_theo", "trang_thai", "ghi_chu"];
   const BOM = "\uFEFF";
   const csv = BOM + [headers.join(","), ...rows.map((r: any) =>
     headers.map((h) => `"${(r[h] ?? "").toString().replace(/"/g, '""')}"`).join(",")
