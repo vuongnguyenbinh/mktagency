@@ -52,15 +52,55 @@
   </section>
 
   <!-- Catalog screen -->
-  <section id="catalog-screen" class="hidden max-w-6xl mx-auto px-4 py-6">
-    <div class="flex flex-col sm:flex-row gap-3 mb-6">
-      <input id="search-input" type="search" placeholder="Tìm theo tên, địa chỉ, tòa nhà…"
-             class="flex-1 border border-stone-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-gold focus:border-gold outline-none" />
-      <div id="result-count" class="text-sm text-stone-500 self-center"></div>
+  <section id="catalog-screen" class="hidden max-w-7xl mx-auto px-4 py-6">
+    <div class="bg-white rounded-xl shadow-sm p-4 mb-6 space-y-3">
+      <input id="search-input" type="search" placeholder="🔍 Tìm theo tên, địa chỉ, tòa nhà, mô tả…"
+             class="w-full border border-stone-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-gold focus:border-gold outline-none" />
+      <div class="grid sm:grid-cols-3 gap-3">
+        <div>
+          <label class="block text-xs font-semibold text-stone-600 mb-1 uppercase tracking-wide">Khu vực / Tòa nhà</label>
+          <select id="filter-area" class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-gold focus:border-gold outline-none bg-white">
+            <option value="">Tất cả khu vực</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-stone-600 mb-1 uppercase tracking-wide">Giá thuê</label>
+          <select id="filter-price" class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-gold focus:border-gold outline-none bg-white">
+            <option value="">Tất cả mức giá</option>
+            <option value="0-20000000">Dưới 20 triệu</option>
+            <option value="20000000-50000000">20 — 50 triệu</option>
+            <option value="50000000-100000000">50 — 100 triệu</option>
+            <option value="100000000-500000000">100 — 500 triệu</option>
+            <option value="500000000-9999999999">Trên 500 triệu</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-stone-600 mb-1 uppercase tracking-wide">Tình trạng</label>
+          <select id="filter-status" class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-gold focus:border-gold outline-none bg-white">
+            <option value="">Tất cả trạng thái</option>
+            <option value="Trống">Còn trống</option>
+            <option value="Giữ chỗ">Giữ cọc</option>
+            <option value="Đang thuê">Đang thuê</option>
+          </select>
+        </div>
+      </div>
+      <div class="flex items-center justify-between flex-wrap gap-2 pt-2 border-t border-stone-100">
+        <div id="result-count" class="text-sm text-stone-500"></div>
+        <button type="button" id="reset-filters" class="text-sm text-gold-dark hover:text-gold-deep underline">Xóa bộ lọc</button>
+      </div>
     </div>
-    <div id="grid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    <div id="grid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5"></div>
     <div id="empty-state" class="hidden text-center text-stone-500 py-16">Không có sản phẩm phù hợp.</div>
   </section>
+
+  <!-- Lightbox -->
+  <div id="lightbox" class="hidden fixed inset-0 bg-black/85 z-50 items-center justify-center p-4" onclick="closeLightbox()">
+    <button type="button" onclick="event.stopPropagation();prevImg()" class="absolute left-4 top-1/2 -translate-y-1/2 text-white text-3xl bg-black/40 hover:bg-black/60 w-12 h-12 rounded-full">‹</button>
+    <button type="button" onclick="event.stopPropagation();nextImg()" class="absolute right-4 top-1/2 -translate-y-1/2 text-white text-3xl bg-black/40 hover:bg-black/60 w-12 h-12 rounded-full">›</button>
+    <button type="button" onclick="closeLightbox()" class="absolute top-4 right-4 text-white text-2xl bg-black/40 hover:bg-black/60 w-10 h-10 rounded-full">×</button>
+    <img id="lightbox-img" class="max-h-[90vh] max-w-[90vw] object-contain rounded-lg" onclick="event.stopPropagation()" />
+    <div id="lightbox-counter" class="absolute bottom-4 left-1/2 -translate-x-1/2 text-white bg-black/50 px-3 py-1 rounded-full text-sm"></div>
+  </div>
 
   <script>
     const pwdScreen = document.getElementById('pwd-screen');
@@ -79,6 +119,16 @@
     const fmtVND = new Intl.NumberFormat('vi-VN');
     let allProducts = [];
     let currentToken = null;
+
+    const filterArea = document.getElementById('filter-area');
+    const filterPrice = document.getElementById('filter-price');
+    const filterStatus = document.getElementById('filter-status');
+    const resetBtn = document.getElementById('reset-filters');
+    const lightboxEl = document.getElementById('lightbox');
+    const lightboxImg = document.getElementById('lightbox-img');
+    const lightboxCounter = document.getElementById('lightbox-counter');
+    let lightboxImages = [];
+    let lightboxIdx = 0;
 
     function showPwd() {
       pwdScreen.classList.remove('hidden');
@@ -147,8 +197,9 @@
           return;
         }
         allProducts = json.data;
+        populateAreaOptions(allProducts);
         showCatalog();
-        renderGrid(allProducts);
+        applyFilters();
       } catch {
         showError('Không kết nối được máy chủ');
       }
@@ -165,8 +216,20 @@
       return s.length > n ? s.slice(0, n) + '…' : s;
     }
 
+    function imgUrl(maDd, filename) {
+      return `/api/public/products/${maDd}/images/${encodeURIComponent(filename)}?token=${encodeURIComponent(currentToken)}`;
+    }
+
+    function statusStyle(s) {
+      // Bigger, more prominent status pills
+      if (s === 'Trống') return { cls: 'bg-emerald-500 text-white shadow', label: '✓ CÒN TRỐNG' };
+      if (s === 'Đang thuê') return { cls: 'bg-stone-600 text-white shadow', label: '● ĐANG THUÊ' };
+      if (s === 'Giữ chỗ') return { cls: 'bg-amber-500 text-white shadow', label: '◐ GIỮ CỌC' };
+      return { cls: 'bg-stone-300 text-stone-700', label: s || '—' };
+    }
+
     function renderGrid(items) {
-      resultCount.textContent = `${items.length} sản phẩm`;
+      resultCount.textContent = `${items.length} / ${allProducts.length} sản phẩm`;
       if (items.length === 0) {
         grid.innerHTML = '';
         emptyState.classList.remove('hidden');
@@ -178,53 +241,122 @@
         const dienTich = item.dien_tich ? `${parseFloat(item.dien_tich).toLocaleString('vi-VN')} m²` : '—';
         const giaThue = item.gia_thue ? `${fmtVND.format(item.gia_thue)} đ/tháng` : 'Liên hệ';
         const phiDV = item.phi_dich_vu ? `Phí DV: ${fmtVND.format(item.phi_dich_vu)} đ` : '';
-        const imgUrl = (item.images && item.images.length)
-          ? `/api/public/products/${item.ma_dd}/images/${encodeURIComponent(item.images[0])}?token=${encodeURIComponent(currentToken)}`
-          : '';
-        const imgCount = item.images ? item.images.length : 0;
-        const statusColor = item.trang_thai === 'Trống'
-          ? 'bg-gold/15 text-gold-dark'
-          : item.trang_thai === 'Đang thuê'
-          ? 'bg-stone-200 text-stone-600'
-          : 'bg-amber-100 text-amber-700';
-
+        const imgs = item.images || [];
+        const imgCount = imgs.length;
+        const st = statusStyle(item.trang_thai);
         const tienIchList = (item.tien_ich || '').split(/[,\n]/).map((s) => s.trim()).filter(Boolean);
 
+        // Image area: main image + thumbnail strip (if 2+) or empty placeholder
+        const mainImg = imgCount > 0
+          ? `<img src="${imgUrl(item.ma_dd, imgs[0])}" alt="${escapeHtml(title)}" loading="lazy"
+                  class="w-full h-full object-cover transition duration-500 hover:scale-105" />`
+          : `<div class="w-full h-full grid place-items-center bg-gradient-to-br from-stone-100 to-amber-50 text-stone-300 text-6xl">🏢</div>`;
+
+        const thumbStrip = imgCount > 1
+          ? `<div class="flex gap-1 p-1 bg-stone-50 overflow-x-auto">
+              ${imgs.slice(0, 5).map((f, i) => `
+                <img src="${imgUrl(item.ma_dd, f)}" alt="thumb" loading="lazy"
+                     onclick="event.stopPropagation();openLightbox('${item.ma_dd}',${i})"
+                     class="w-14 h-14 object-cover rounded cursor-pointer hover:ring-2 hover:ring-gold flex-shrink-0" />
+              `).join('')}
+              ${imgCount > 5 ? `<div onclick="event.stopPropagation();openLightbox('${item.ma_dd}',5)" class="w-14 h-14 grid place-items-center bg-stone-200 rounded cursor-pointer text-stone-600 text-xs font-bold flex-shrink-0">+${imgCount - 5}</div>` : ''}
+            </div>`
+          : '';
+
         return `
-          <div class="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition border border-stone-100">
-            <div class="relative h-48 bg-stone-100">
-              ${imgUrl
-                ? `<img src="${imgUrl}" alt="${escapeHtml(title)}" class="w-full h-full object-cover" />`
-                : `<div class="w-full h-full grid place-items-center text-stone-300 text-5xl">🏢</div>`}
-              ${imgCount > 1 ? `<span class="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-0.5 rounded">+${imgCount - 1} ảnh</span>` : ''}
-              ${item.trang_thai ? `<span class="absolute top-2 left-2 text-xs px-2 py-0.5 rounded ${statusColor}">${escapeHtml(item.trang_thai)}</span>` : ''}
+          <div class="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-xl transition border border-stone-100 group">
+            <div class="relative h-56 bg-stone-100 cursor-pointer overflow-hidden" ${imgCount ? `onclick="openLightbox('${item.ma_dd}',0)"` : ''}>
+              ${mainImg}
+              <span class="absolute top-3 left-3 ${st.cls} text-xs font-bold px-3 py-1.5 rounded-full tracking-wider">${st.label}</span>
+              ${imgCount > 0 ? `<span class="absolute bottom-3 right-3 bg-black/70 text-white text-xs px-2.5 py-1 rounded-full backdrop-blur-sm">📷 ${imgCount}</span>` : ''}
+              <div class="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/40 to-transparent pointer-events-none"></div>
             </div>
+            ${thumbStrip}
             <div class="p-4">
-              <h3 class="font-heading font-semibold text-stone-900 mb-1">${escapeHtml(title)}</h3>
-              <p class="text-sm text-stone-500 mb-2">${escapeHtml(item.dia_chi || item.toa_nha || '')}</p>
-              <div class="flex flex-wrap gap-2 text-sm mb-2">
-                <span class="bg-stone-100 text-stone-700 px-2 py-0.5 rounded">${dienTich}</span>
-                <span class="bg-gold/15 text-gold-dark px-2 py-0.5 rounded font-semibold">${giaThue}</span>
+              <h3 class="font-heading font-semibold text-stone-900 mb-1 text-lg">${escapeHtml(title)}</h3>
+              <p class="text-sm text-stone-500 mb-3 flex items-center gap-1">📍 ${escapeHtml(item.dia_chi || item.toa_nha || '')}</p>
+              <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1 mb-2">
+                <span class="text-gold-deep font-heading font-bold text-lg">${giaThue}</span>
+                <span class="bg-stone-100 text-stone-700 text-xs px-2 py-0.5 rounded">${dienTich}</span>
               </div>
               ${phiDV ? `<p class="text-xs text-stone-500 mb-2">${phiDV}</p>` : ''}
               ${item.mo_ta ? `<p class="text-sm text-stone-600 mb-2">${escapeHtml(truncate(item.mo_ta, 120))}</p>` : ''}
               ${tienIchList.length
-                ? `<ul class="text-xs text-stone-500 list-disc list-inside">${tienIchList.slice(0, 4).map((t) => `<li>${escapeHtml(t)}</li>`).join('')}</ul>`
+                ? `<div class="flex flex-wrap gap-1 mt-2">${tienIchList.slice(0, 5).map((t) => `<span class="text-xs bg-gold/10 text-gold-deep px-2 py-0.5 rounded">${escapeHtml(t)}</span>`).join('')}</div>`
                 : ''}
             </div>
           </div>`;
       }).join('');
     }
 
-    searchInput.addEventListener('input', () => {
+    function populateAreaOptions(items) {
+      const areas = Array.from(new Set(items.map((p) => p.toa_nha).filter(Boolean))).sort();
+      filterArea.innerHTML = '<option value="">Tất cả khu vực</option>' +
+        areas.map((a) => `<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`).join('');
+    }
+
+    function applyFilters() {
       const q = searchInput.value.toLowerCase().trim();
-      if (!q) return renderGrid(allProducts);
-      const filtered = allProducts.filter((p) =>
-        [p.ten_hien_thi, p.dia_chi, p.toa_nha, p.mo_ta]
-          .filter(Boolean)
-          .some((s) => String(s).toLowerCase().includes(q))
-      );
+      const area = filterArea.value;
+      const priceRange = filterPrice.value;
+      const status = filterStatus.value;
+
+      let [minP, maxP] = [0, Infinity];
+      if (priceRange) {
+        const parts = priceRange.split('-').map(Number);
+        minP = parts[0]; maxP = parts[1];
+      }
+
+      const filtered = allProducts.filter((p) => {
+        if (q && ![p.ten_hien_thi, p.dia_chi, p.toa_nha, p.mo_ta].filter(Boolean).some((s) => String(s).toLowerCase().includes(q))) return false;
+        if (area && p.toa_nha !== area) return false;
+        if (status && p.trang_thai !== status) return false;
+        if (priceRange) {
+          const g = parseFloat(p.gia_thue) || 0;
+          if (g < minP || g > maxP) return false;
+        }
+        return true;
+      });
       renderGrid(filtered);
+    }
+
+    [searchInput, filterArea, filterPrice, filterStatus].forEach((el) => el.addEventListener('input', applyFilters));
+    [filterArea, filterPrice, filterStatus].forEach((el) => el.addEventListener('change', applyFilters));
+    resetBtn.addEventListener('click', () => {
+      searchInput.value = ''; filterArea.value = ''; filterPrice.value = ''; filterStatus.value = '';
+      applyFilters();
+    });
+
+    // Lightbox
+    function openLightbox(maDd, startIdx) {
+      const item = allProducts.find((p) => p.ma_dd === maDd);
+      if (!item || !item.images || item.images.length === 0) return;
+      lightboxImages = item.images.map((f) => imgUrl(maDd, f));
+      lightboxIdx = startIdx || 0;
+      lightboxImg.src = lightboxImages[lightboxIdx];
+      lightboxCounter.textContent = `${lightboxIdx + 1} / ${lightboxImages.length}`;
+      lightboxEl.classList.remove('hidden');
+      lightboxEl.classList.add('flex');
+    }
+    function closeLightbox() {
+      lightboxEl.classList.add('hidden');
+      lightboxEl.classList.remove('flex');
+    }
+    function prevImg() {
+      lightboxIdx = (lightboxIdx - 1 + lightboxImages.length) % lightboxImages.length;
+      lightboxImg.src = lightboxImages[lightboxIdx];
+      lightboxCounter.textContent = `${lightboxIdx + 1} / ${lightboxImages.length}`;
+    }
+    function nextImg() {
+      lightboxIdx = (lightboxIdx + 1) % lightboxImages.length;
+      lightboxImg.src = lightboxImages[lightboxIdx];
+      lightboxCounter.textContent = `${lightboxIdx + 1} / ${lightboxImages.length}`;
+    }
+    document.addEventListener('keydown', (e) => {
+      if (lightboxEl.classList.contains('hidden')) return;
+      if (e.key === 'Escape') closeLightbox();
+      if (e.key === 'ArrowLeft') prevImg();
+      if (e.key === 'ArrowRight') nextImg();
     });
 
     // Init
