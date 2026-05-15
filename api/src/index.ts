@@ -94,6 +94,8 @@ app.use("/*", async (c, next) => {
 
   const path = c.req.path;
   if (path.startsWith("/api/") || path.startsWith("/uploads/")) return next();
+  // Static assets (logo, fonts, css, js) fall through to admin static serve
+  if (/\.(png|jpe?g|gif|webp|svg|ico|css|js|woff2?|map)$/i.test(path)) return next();
 
   let target: string;
   if (path === "/" || path === "") target = "../public/index.html";

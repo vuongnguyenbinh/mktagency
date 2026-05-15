@@ -5,41 +5,62 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex, nofollow" />
   <title>Cổng CTV — EcoSmart</title>
+  <link rel="icon" type="image/png" href="/logo-ecosmart.png?v=1" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Phudu:wght@500;600;700;800&display=swap" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            heading: ['Phudu', 'Inter', 'sans-serif'],
+            body: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            gold: { DEFAULT: '#c8a164', light: '#d4b87a', dark: '#b08d45', deep: '#7a5c25' },
+          },
+        },
+      },
+    };
+  </script>
+  <style>body { font-family: 'Inter', sans-serif; } h1,h2,h3,h4,h5,h6 { font-family: 'Phudu', sans-serif; }</style>
 </head>
-<body class="min-h-screen bg-gradient-to-br from-emerald-50 to-blue-50 flex flex-col">
+<body class="min-h-screen bg-gradient-to-br from-stone-50 to-amber-50 flex flex-col">
   <header class="px-6 py-4">
-    <div class="max-w-5xl mx-auto flex items-center gap-2">
-      <div class="w-8 h-8 rounded bg-emerald-600 text-white grid place-items-center font-bold">E</div>
-      <span class="font-semibold text-gray-800">EcoSmart</span>
+    <div class="max-w-5xl mx-auto flex items-center gap-3">
+      <img src="/logo-ecosmart.png?v=1" alt="EcoSmart" class="w-10 h-10 object-contain" />
+      <span class="font-heading font-bold text-gold-dark text-lg tracking-wide">EcoSmart</span>
     </div>
   </header>
 
   <main class="flex-1 flex items-center justify-center px-6">
     <div class="max-w-2xl w-full text-center">
-      <h1 class="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">Cổng cộng tác viên</h1>
-      <p class="text-gray-600 text-lg mb-10">
+      <img src="/logo-ecosmart.png?v=1" alt="EcoSmart" class="w-24 h-24 mx-auto object-contain mb-6" />
+      <h1 class="font-heading text-4xl sm:text-5xl font-bold text-stone-900 mb-4">Cổng cộng tác viên</h1>
+      <p class="text-stone-600 text-lg mb-10 leading-relaxed">
         Đăng ký để trở thành cộng tác viên kinh doanh văn phòng cho thuê EcoSmart, hoặc xem danh sách sản phẩm hiện có.
       </p>
 
       <div class="grid sm:grid-cols-2 gap-4">
         <a href="/dang-ky"
-           class="block bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl px-6 py-5 shadow-md transition">
+           class="block bg-gold hover:bg-gold-dark text-white font-heading font-semibold rounded-xl px-6 py-5 shadow-md transition">
           <div class="text-2xl mb-1">📝</div>
-          <div>Đăng ký CTV</div>
-          <div class="text-emerald-100 text-sm font-normal mt-1">Điền thông tin cá nhân</div>
+          <div class="text-lg">Đăng ký CTV</div>
+          <div class="text-amber-50 text-sm font-body font-normal mt-1">Điền thông tin cá nhân</div>
         </a>
         <a href="/bang-hang"
-           class="block bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl px-6 py-5 shadow-md transition">
+           class="block bg-stone-800 hover:bg-stone-900 text-white font-heading font-semibold rounded-xl px-6 py-5 shadow-md transition">
           <div class="text-2xl mb-1">🏢</div>
-          <div>Xem bảng hàng</div>
-          <div class="text-blue-100 text-sm font-normal mt-1">Danh sách sản phẩm đang bán</div>
+          <div class="text-lg">Xem bảng hàng</div>
+          <div class="text-stone-300 text-sm font-body font-normal mt-1">Danh sách sản phẩm đang bán</div>
         </a>
       </div>
     </div>
   </main>
 
-  <footer class="px-6 py-4 text-center text-sm text-gray-500">
+  <footer class="px-6 py-4 text-center text-sm text-stone-500">
     © EcoSmart Group · sale.ecosmartgroup.vn
   </footer>
 </body>
