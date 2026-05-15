@@ -13,6 +13,8 @@ import contracts from "./routes/contract-routes";
 import locations from "./routes/location-routes";
 import employees from "./routes/employee-routes";
 import n8n from "./routes/n8n-routes";
+import ctv from "./routes/ctv-routes";
+import publicCatalog from "./routes/public-catalog-routes";
 
 const app = new Hono();
 
@@ -66,7 +68,7 @@ app.get("/api/exchange-rate", async (c) => {
 app.use("/api/*", async (c, next) => {
   const path = c.req.path;
   // Public routes: login, health, exchange rate, n8n webhooks
-  const publicPaths = ["/api/login", "/api/health", "/api/exchange-rate", "/api/n8n"];
+  const publicPaths = ["/api/login", "/api/health", "/api/exchange-rate", "/api/n8n", "/api/public"];
   if (publicPaths.some((p) => path.startsWith(p))) {
     return next();
   }
@@ -82,8 +84,27 @@ app.route("/api/contracts", contracts);
 app.route("/api/locations", locations);
 app.route("/api/employees", employees);
 app.route("/api/n8n", n8n);
+app.route("/api/ctv", ctv);
+app.route("/api/public", publicCatalog);
 
-// Serve static files (frontend)
+// Public CTV portal (subdomain ctv.*) — serve dedicated HTML pages
+app.use("/*", async (c, next) => {
+  const host = c.req.header("Host") || "";
+  if (!host.startsWith("ctv.")) return next();
+
+  const path = c.req.path;
+  if (path.startsWith("/api/") || path.startsWith("/uploads/")) return next();
+
+  let target: string;
+  if (path === "/" || path === "") target = "../public/index.html";
+  else if (path === "/dang-ky" || path === "/dang-ky.html") target = "../public/dang-ky.html";
+  else if (path === "/bang-hang" || path === "/bang-hang.html") target = "../public/bang-hang.html";
+  else return c.notFound();
+
+  return serveStatic({ path: target })(c, next);
+});
+
+// Serve static files (admin frontend)
 app.use("/*", serveStatic({ root: "../" }));
 app.get("*", serveStatic({ path: "../index.html" }));
 

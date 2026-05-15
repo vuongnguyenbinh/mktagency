@@ -7,13 +7,21 @@ if (!JWT_SECRET) {
 }
 
 // JWT auth middleware for protected routes
+// Accepts token from "Authorization: Bearer <t>" header OR "?token=<t>" query (needed for <img> tags)
 export async function authMiddleware(c: Context, next: Next) {
   const authHeader = c.req.header("Authorization");
-  if (!authHeader?.startsWith("Bearer ")) {
+  const headerToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+  const queryToken = c.req.query("token");
+  const token = headerToken || queryToken;
+  if (!token) {
     return c.json({ success: false, message: "Unauthorized" }, 401);
   }
   try {
-    const payload = await verify(authHeader.slice(7), JWT_SECRET, "HS256");
+    const payload = await verify(token, JWT_SECRET, "HS256");
+    // Reject public catalog tokens — they must not access admin endpoints
+    if ((payload as any).type === "public") {
+      return c.json({ success: false, message: "Invalid token type" }, 401);
+    }
     c.set("user", payload);
     await next();
   } catch {

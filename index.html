@@ -1199,6 +1199,9 @@
         <button class="nav-item" data-page="employees">
           <i data-lucide="users"></i><span>Nhân viên</span>
         </button>
+        <button class="nav-item" data-page="ctv">
+          <i data-lucide="user-plus"></i><span>Cộng tác viên</span>
+        </button>
       </nav>
       <main class="main">
         <div class="page active" id="page-dashboard">
@@ -1487,6 +1490,27 @@
           </div>
           <div id="employeesContent" style="display: none"></div>
         </div>
+        <div class="page" id="page-ctv">
+          <div class="page-toolbar">
+            <div class="toolbar-left">
+              <h2 style="font-weight: 700">Cộng tác viên</h2>
+            </div>
+            <div class="toolbar-right">
+              <select id="filterCTVStatus" class="filter-select" onchange="loadCTVs()" style="margin-right:8px">
+                <option value="">Tất cả trạng thái</option>
+                <option value="Moi">Mới</option>
+                <option value="Da_duyet">Đã duyệt</option>
+                <option value="Tu_choi">Từ chối</option>
+              </select>
+              <input id="searchCTV" type="search" placeholder="SĐT hoặc họ tên" class="filter-input" oninput="debouncedLoadCTVs()" />
+            </div>
+          </div>
+          <div class="loading" id="ctvLoading">
+            <div class="loading-spinner"></div>
+            <div>Đang tải...</div>
+          </div>
+          <div id="ctvContent" style="display: none"></div>
+        </div>
       </main>
       <nav class="mobile-nav">
         <button class="mobile-nav-item active" data-page="dashboard">
@@ -1506,6 +1530,9 @@
         </button>
         <button class="mobile-nav-item" data-page="employees">
           <i data-lucide="user-cog"></i>NV
+        </button>
+        <button class="mobile-nav-item" data-page="ctv">
+          <i data-lucide="user-plus"></i>CTV
         </button>
       </nav>
 
@@ -1573,6 +1600,10 @@
         updateEmployee:       { method: "PUT",    path: "/api/employees/{id}" },
         deleteEmployee:       { method: "DELETE", path: "/api/employees/{id}" },
         getAllLocations:       { method: "GET",    path: "/api/locations/all" },
+        getCTVs:              { method: "GET",    path: "/api/ctv" },
+        getCTVDetail:         { method: "GET",    path: "/api/ctv/{id}" },
+        updateCTV:            { method: "PATCH",  path: "/api/ctv/{id}" },
+        deleteCTV:            { method: "DELETE", path: "/api/ctv/{id}" },
       };
 
       // GAS param names → REST query param names
@@ -1581,6 +1612,7 @@
         getOpportunities:     { timKiem: "search", giaiDoan: "giaiDoan", phuTrach: "phuTrach" },
         getContracts:         { timKiem: "search", trangThai: "trangThai" },
         getExpiringContracts: { days: "days" },
+        getCTVs:              { timKiem: "search", trangThai: "trangThai" },
       };
 
       // ==================== API HELPERS (REST Adapter) ====================
@@ -1910,6 +1942,9 @@
             break;
           case "employees":
             loadEmployees();
+            break;
+          case "ctv":
+            loadCTVs();
             break;
         }
       }
@@ -2348,6 +2383,9 @@
           { name: "phiDichVu", label: "Phí dịch vụ", value: loc.phi_dich_vu, type: "number" },
           { name: "trangThai", label: "Trạng thái", value: loc.trang_thai, type: "select", options: ["Trống", "Đang thuê", "Giữ chỗ"] },
           { name: "ghiChu", label: "Ghi chú", value: loc.ghi_chu, type: "textarea" },
+          { name: "moTa", label: "Mô tả bán hàng", value: loc.mo_ta, type: "textarea" },
+          { name: "tienIch", label: "Tiện ích (mỗi dòng 1 mục)", value: loc.tien_ich, type: "textarea" },
+          { name: "hienThiPublic", label: "Hiển thị trên bảng hàng public", value: loc.hien_thi_public === false ? "Khong" : "Co", type: "select", options: [{ value: "Co", label: "Có" }, { value: "Khong", label: "Không" }] },
         ]);
       }
 
@@ -2356,6 +2394,146 @@
         const res = await apiDelete("deleteLocation", id);
         alert(res.message);
         if (res.success) loadLocations();
+      }
+
+      // ==================== LOCATION IMAGES ====================
+      async function loadLocationImages(maDd) {
+        const container = document.getElementById("locationImageList");
+        if (!container) return;
+        try {
+          const res = await fetch(`${API_BASE}/api/locations/${maDd}/images`, { headers: authHeaders() });
+          const result = await res.json();
+          if (!result.success || result.data.length === 0) {
+            container.innerHTML = '<span style="color:var(--gray-text);font-size:13px">Chưa có ảnh</span>';
+            return;
+          }
+          const token = localStorage.getItem("authToken");
+          container.innerHTML = result.data.map((f) => `
+            <div style="border:1px solid var(--border);border-radius:8px;padding:6px;width:120px;text-align:center;position:relative;background:var(--card-bg)">
+              <img src="${API_BASE}/api/locations/${maDd}/images/${encodeURIComponent(f.filename)}?token=${encodeURIComponent(token)}"
+                   style="width:100%;height:80px;object-fit:cover;border-radius:4px" alt="${f.displayName}" />
+              <div style="font-size:11px;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${f.displayName}">${f.displayName}</div>
+              <div style="font-size:10px;color:var(--gray-text)">${(f.size / 1024).toFixed(0)} KB</div>
+              <button type="button" onclick="deleteLocationImage('${maDd}','${f.filename}')" style="position:absolute;top:2px;right:2px;background:rgba(220,38,38,0.85);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:12px;cursor:pointer;line-height:1" title="Xóa">×</button>
+            </div>
+          `).join("");
+        } catch {
+          container.innerHTML = '<span style="color:var(--error-text)">Lỗi tải ảnh</span>';
+        }
+      }
+
+      async function uploadLocationImages(maDd) {
+        const input = document.getElementById("locationImageInput");
+        if (!input.files.length) return alert("Chọn ảnh trước");
+        for (const file of input.files) {
+          const formData = new FormData();
+          formData.append("file", file);
+          try {
+            const res = await fetch(`${API_BASE}/api/locations/${maDd}/images`, {
+              method: "POST",
+              headers: authHeaders(),
+              body: formData,
+            });
+            const result = await res.json();
+            if (!result.success) alert(`Lỗi upload ${file.name}: ${result.message}`);
+          } catch (e) {
+            alert(`Lỗi upload ${file.name}: ${e.message}`);
+          }
+        }
+        input.value = "";
+        loadLocationImages(maDd);
+      }
+
+      async function deleteLocationImage(maDd, filename) {
+        if (!confirm("Xác nhận xóa ảnh này?")) return;
+        try {
+          const res = await fetch(`${API_BASE}/api/locations/${maDd}/images/${filename}`, { method: "DELETE", headers: authHeaders() });
+          const result = await res.json();
+          if (result.success) loadLocationImages(maDd);
+          else alert(result.message);
+        } catch (e) {
+          alert(`Lỗi: ${e.message}`);
+        }
+      }
+
+      // ==================== CTV (COLLABORATORS) ====================
+      const debouncedLoadCTVs = debounce(loadCTVs, 300);
+
+      async function loadCTVs() {
+        document.getElementById("ctvLoading").style.display = "flex";
+        document.getElementById("ctvContent").style.display = "none";
+        const params = {
+          trangThai: document.getElementById("filterCTVStatus")?.value || "",
+          timKiem: document.getElementById("searchCTV")?.value || "",
+        };
+        const result = await apiCall("getCTVs", params);
+        if (result && result.success) {
+          const tthaiBadge = { Moi: "badge-warning", Da_duyet: "badge-success", Tu_choi: "badge-danger" };
+          const tthaiLabel = { Moi: "Mới", Da_duyet: "Đã duyệt", Tu_choi: "Từ chối" };
+          const rows = result.data.map((c) => `<tr>
+            <td><span class="badge badge-info">${c.ma_ctv}</span></td>
+            <td>${c.ho_ten || "-"}</td>
+            <td>${c.sdt || "-"}</td>
+            <td>${c.email || "-"}</td>
+            <td>${c.dia_chi || "-"}</td>
+            <td>
+              <select onchange="changeCTVStatus('${c.ma_ctv}', this.value)" class="filter-select" style="font-size:12px;padding:2px 6px">
+                <option value="Moi" ${c.trang_thai === "Moi" ? "selected" : ""}>Mới</option>
+                <option value="Da_duyet" ${c.trang_thai === "Da_duyet" ? "selected" : ""}>Đã duyệt</option>
+                <option value="Tu_choi" ${c.trang_thai === "Tu_choi" ? "selected" : ""}>Từ chối</option>
+              </select>
+            </td>
+            <td>${c.ngay_dang_ky ? new Date(c.ngay_dang_ky).toLocaleDateString("vi-VN") : "-"}</td>
+            <td class="action-buttons">
+              <button class="btn-icon btn-edit" onclick="editCTV('${c.ma_ctv}')" title="Sửa"><i data-lucide="pencil"></i></button>
+              <button class="btn-icon btn-delete" onclick="deleteCTV('${c.ma_ctv}')" title="Xóa"><i data-lucide="trash-2"></i></button>
+            </td>
+          </tr>`).join("");
+          document.getElementById("ctvContent").innerHTML = `<div class="table-container"><table>
+            <thead><tr><th>Mã</th><th>Họ tên</th><th>SĐT</th><th>Email</th><th>Địa chỉ</th><th>Trạng thái</th><th>Ngày ĐK</th><th>Thao tác</th></tr></thead>
+            <tbody>${rows}</tbody></table>
+            <div style="padding:8px;color:var(--gray-text);font-size:13px">Tổng: ${result.total} CTV</div>
+            </div>`;
+          lucide.createIcons();
+        } else {
+          showError("ctvContent", result?.message || "Không thể tải danh sách CTV");
+        }
+        document.getElementById("ctvLoading").style.display = "none";
+        document.getElementById("ctvContent").style.display = "block";
+      }
+
+      async function editCTV(id) {
+        const result = await apiCall("getCTVDetail", { id });
+        if (!result.success) return alert("Không thể tải dữ liệu CTV");
+        const c = result.data;
+        currentEditData = c;
+        openModal("Sửa cộng tác viên", "ctv", id, [
+          { name: "hoTen", label: "Họ tên *", value: c.ho_ten },
+          { name: "sdt", label: "SĐT *", value: c.sdt },
+          { name: "email", label: "Email", value: c.email },
+          { name: "cccd", label: "CCCD", value: c.cccd },
+          { name: "diaChi", label: "Địa chỉ", value: c.dia_chi },
+          { name: "nganHang", label: "Ngân hàng", value: c.ngan_hang },
+          { name: "soTk", label: "Số tài khoản", value: c.so_tk },
+          { name: "chuTk", label: "Chủ tài khoản", value: c.chu_tk },
+          { name: "ghiChu", label: "Ghi chú", value: c.ghi_chu, type: "textarea" },
+          { name: "trangThai", label: "Trạng thái", value: c.trang_thai, type: "select", options: [{ value: "Moi", label: "Mới" }, { value: "Da_duyet", label: "Đã duyệt" }, { value: "Tu_choi", label: "Từ chối" }] },
+        ]);
+      }
+
+      async function deleteCTV(id) {
+        if (!confirm(`Xác nhận xóa CTV ${id}?`)) return;
+        const res = await apiDelete("deleteCTV", id);
+        alert(res.message);
+        if (res.success) loadCTVs();
+      }
+
+      async function changeCTVStatus(id, newStatus) {
+        const res = await apiPut("updateCTV", id, { trang_thai: newStatus });
+        if (!res.success) {
+          alert(res.message || "Lỗi cập nhật");
+          loadCTVs();
+        }
       }
 
       // ==================== EMPLOYEE MANAGEMENT ====================
@@ -2678,6 +2856,27 @@
           loadContractFiles(id);
         }
 
+        // Add image section for locations (edit mode only)
+        const locImgSection = document.getElementById("locationImageSection");
+        if (locImgSection) locImgSection.remove();
+        if (type === "location" && id) {
+          const section = document.createElement("div");
+          section.id = "locationImageSection";
+          section.innerHTML = `
+            <hr style="margin:16px 0;border-color:var(--border)">
+            <h4 style="margin-bottom:8px">Hình ảnh sản phẩm (cho bảng hàng public)</h4>
+            <div style="display:flex;gap:8px;margin-bottom:12px">
+              <input type="file" id="locationImageInput" accept="image/jpeg,image/png,image/gif,image/webp" multiple style="flex:1" />
+              <button type="button" class="btn btn-primary" onclick="uploadLocationImages('${id}')" style="white-space:nowrap">Upload</button>
+            </div>
+            <div id="locationImageList" style="display:flex;flex-wrap:wrap;gap:8px">
+              <span style="color:var(--gray-text)">Đang tải...</span>
+            </div>
+          `;
+          formFields.parentElement.appendChild(section);
+          loadLocationImages(id);
+        }
+
         document.getElementById("editModal").style.display = "flex";
       }
 
@@ -2777,11 +2976,29 @@
             phiDichVu: parseFloat(data.phiDichVu) || 0,
             trangThai: data.trangThai,
             ghiChu: data.ghiChu,
+            moTa: data.moTa || null,
+            tienIch: data.tienIch || null,
+            hienThiPublic: data.hienThiPublic !== "Khong",
           };
           res = isCreate
             ? await apiPost("addLocation", payload)
             : await apiPut("updateLocation", id, payload);
           reload = loadLocations;
+        } else if (type === "ctv") {
+          const payload = {
+            ho_ten: data.hoTen,
+            sdt: data.sdt,
+            email: data.email || null,
+            cccd: data.cccd || null,
+            dia_chi: data.diaChi || null,
+            ngan_hang: data.nganHang || null,
+            so_tk: data.soTk || null,
+            chu_tk: data.chuTk || null,
+            ghi_chu: data.ghiChu || null,
+            trang_thai: data.trangThai,
+          };
+          res = await apiPut("updateCTV", id, payload);
+          reload = loadCTVs;
         } else if (type === "employee") {
           const payload = {
             hoTen: data.hoTen,
@@ -3013,6 +3230,7 @@
               }
               <div style="font-size:11px;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${f.displayName}">${f.displayName}</div>
               <div style="font-size:10px;color:var(--gray-text)">${(f.size / 1024).toFixed(0)} KB</div>
+              <button type="button" onclick="downloadContractFile('${maHd}','${f.filename}','${f.displayName.replace(/'/g, "\\'")}')" style="position:absolute;top:2px;left:2px;background:rgba(37,99,235,0.85);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:12px;cursor:pointer;line-height:1" title="Tải xuống">↓</button>
               <button type="button" onclick="deleteContractFile('${maHd}','${f.filename}')" style="position:absolute;top:2px;right:2px;background:rgba(220,38,38,0.8);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:12px;cursor:pointer;line-height:1" title="Xóa">×</button>
             </div>
           `).join("");
@@ -3046,6 +3264,27 @@
       function previewContractFile(maHd, filename, type) {
         const url = `${API_BASE}/api/contracts/${maHd}/files/${filename}`;
         window.open(url, "_blank");
+      }
+
+      async function downloadContractFile(maHd, filename, displayName) {
+        try {
+          const res = await fetch(`${API_BASE}/api/contracts/${maHd}/files/${filename}`, { headers: authHeaders() });
+          if (!res.ok) {
+            alert(`Lỗi tải file: ${res.status}`);
+            return;
+          }
+          const blob = await res.blob();
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = displayName || filename;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        } catch (e) {
+          alert(`Lỗi tải file: ${e.message}`);
+        }
       }
 
       async function deleteContractFile(maHd, filename) {
@@ -3496,6 +3735,9 @@
             options: ["Trống", "Đang thuê", "Giữ chỗ"],
           },
           { name: "ghiChu", label: "Ghi chú", value: "", type: "textarea" },
+          { name: "moTa", label: "Mô tả bán hàng", value: "", type: "textarea" },
+          { name: "tienIch", label: "Tiện ích (mỗi dòng 1 mục)", value: "", type: "textarea" },
+          { name: "hienThiPublic", label: "Hiển thị trên bảng hàng public", value: "Co", type: "select", options: [{ value: "Co", label: "Có" }, { value: "Khong", label: "Không" }] },
         ]);
       }
 

@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Bảng hàng — EcoSmart CTV</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-gray-50">
+  <header class="px-6 py-4 bg-white shadow-sm">
+    <div class="max-w-6xl mx-auto flex items-center justify-between">
+      <a href="/" class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded bg-emerald-600 text-white grid place-items-center font-bold">E</div>
+        <span class="font-semibold text-gray-800">EcoSmart · Bảng hàng</span>
+      </a>
+      <button id="logout-btn" class="hidden text-sm text-gray-500 hover:text-red-600">Đăng xuất</button>
+    </div>
+  </header>
+
+  <!-- Password screen -->
+  <section id="pwd-screen" class="max-w-md mx-auto px-4 py-16">
+    <div class="bg-white rounded-xl shadow-sm p-8">
+      <div class="text-4xl text-center mb-4">🔒</div>
+      <h1 class="text-2xl font-bold text-center text-gray-900 mb-2">Bảng hàng nội bộ</h1>
+      <p class="text-gray-600 text-center mb-6">Vui lòng nhập mật khẩu để truy cập danh sách sản phẩm.</p>
+      <form id="pwd-form" class="space-y-4">
+        <input id="pwd-input" type="password" required placeholder="Mật khẩu"
+               class="w-full border border-gray-300 rounded-lg px-3 py-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
+        <div id="pwd-error" class="hidden text-red-600 text-sm"></div>
+        <button type="submit" id="pwd-btn"
+                class="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold rounded-lg py-3 transition">
+          Vào bảng hàng
+        </button>
+      </form>
+    </div>
+  </section>
+
+  <!-- Catalog screen -->
+  <section id="catalog-screen" class="hidden max-w-6xl mx-auto px-4 py-6">
+    <div class="flex flex-col sm:flex-row gap-3 mb-6">
+      <input id="search-input" type="search" placeholder="Tìm theo tên, địa chỉ, tòa nhà…"
+             class="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none" />
+      <div id="result-count" class="text-sm text-gray-500 self-center"></div>
+    </div>
+    <div id="grid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    <div id="empty-state" class="hidden text-center text-gray-500 py-16">Không có sản phẩm phù hợp.</div>
+  </section>
+
+  <script>
+    const pwdScreen = document.getElementById('pwd-screen');
+    const catalogScreen = document.getElementById('catalog-screen');
+    const pwdForm = document.getElementById('pwd-form');
+    const pwdInput = document.getElementById('pwd-input');
+    const pwdBtn = document.getElementById('pwd-btn');
+    const pwdError = document.getElementById('pwd-error');
+    const logoutBtn = document.getElementById('logout-btn');
+    const searchInput = document.getElementById('search-input');
+    const grid = document.getElementById('grid');
+    const emptyState = document.getElementById('empty-state');
+    const resultCount = document.getElementById('result-count');
+
+    const TOKEN_KEY = 'publicToken';
+    const fmtVND = new Intl.NumberFormat('vi-VN');
+    let allProducts = [];
+    let currentToken = null;
+
+    function showPwd() {
+      pwdScreen.classList.remove('hidden');
+      catalogScreen.classList.add('hidden');
+      logoutBtn.classList.add('hidden');
+      pwdInput.value = '';
+      pwdInput.focus();
+    }
+    function showCatalog() {
+      pwdScreen.classList.add('hidden');
+      catalogScreen.classList.remove('hidden');
+      logoutBtn.classList.remove('hidden');
+    }
+    function showError(msg) {
+      pwdError.textContent = msg;
+      pwdError.classList.remove('hidden');
+    }
+
+    pwdForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      pwdBtn.disabled = true;
+      pwdBtn.textContent = 'Đang xác minh…';
+      pwdError.classList.add('hidden');
+      try {
+        const res = await fetch('/api/public/verify-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: pwdInput.value }),
+        });
+        const json = await res.json();
+        if (json.success) {
+          localStorage.setItem(TOKEN_KEY, json.data.token);
+          await loadProducts(json.data.token);
+        } else {
+          showError(json.message || 'Sai mật khẩu');
+        }
+      } catch {
+        showError('Không kết nối được máy chủ');
+      } finally {
+        pwdBtn.disabled = false;
+        pwdBtn.textContent = 'Vào bảng hàng';
+      }
+    });
+
+    logoutBtn.addEventListener('click', () => {
+      localStorage.removeItem(TOKEN_KEY);
+      allProducts = [];
+      currentToken = null;
+      showPwd();
+    });
+
+    async function loadProducts(token) {
+      currentToken = token;
+      try {
+        const res = await fetch('/api/public/products', {
+          headers: { Authorization: 'Bearer ' + token },
+        });
+        if (res.status === 401) {
+          localStorage.removeItem(TOKEN_KEY);
+          showPwd();
+          return;
+        }
+        const json = await res.json();
+        if (!json.success) {
+          showError(json.message || 'Lỗi tải dữ liệu');
+          return;
+        }
+        allProducts = json.data;
+        showCatalog();
+        renderGrid(allProducts);
+      } catch {
+        showError('Không kết nối được máy chủ');
+      }
+    }
+
+    function escapeHtml(s) {
+      return String(s ?? '').replace(/[&<>"']/g, (c) => ({
+        '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+      }[c]));
+    }
+
+    function truncate(s, n) {
+      s = s || '';
+      return s.length > n ? s.slice(0, n) + '…' : s;
+    }
+
+    function renderGrid(items) {
+      resultCount.textContent = `${items.length} sản phẩm`;
+      if (items.length === 0) {
+        grid.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        return;
+      }
+      emptyState.classList.add('hidden');
+      grid.innerHTML = items.map((item) => {
+        const title = item.ten_hien_thi || `${item.toa_nha} - T${item.tang || '?'} - P${item.phong || '?'}`;
+        const dienTich = item.dien_tich ? `${parseFloat(item.dien_tich).toLocaleString('vi-VN')} m²` : '—';
+        const giaThue = item.gia_thue ? `${fmtVND.format(item.gia_thue)} đ/tháng` : 'Liên hệ';
+        const phiDV = item.phi_dich_vu ? `Phí DV: ${fmtVND.format(item.phi_dich_vu)} đ` : '';
+        const imgUrl = (item.images && item.images.length)
+          ? `/api/public/products/${item.ma_dd}/images/${encodeURIComponent(item.images[0])}?token=${encodeURIComponent(currentToken)}`
+          : '';
+        const imgCount = item.images ? item.images.length : 0;
+        const statusColor = item.trang_thai === 'Trống'
+          ? 'bg-emerald-100 text-emerald-700'
+          : item.trang_thai === 'Đang thuê'
+          ? 'bg-gray-200 text-gray-600'
+          : 'bg-amber-100 text-amber-700';
+
+        const tienIchList = (item.tien_ich || '').split(/[,\n]/).map((s) => s.trim()).filter(Boolean);
+
+        return `
+          <div class="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition">
+            <div class="relative h-48 bg-gray-100">
+              ${imgUrl
+                ? `<img src="${imgUrl}" alt="${escapeHtml(title)}" class="w-full h-full object-cover" />`
+                : `<div class="w-full h-full grid place-items-center text-gray-400 text-5xl">🏢</div>`}
+              ${imgCount > 1 ? `<span class="absolute bottom-2 right-2 bg-black/60 text-white text-xs px-2 py-0.5 rounded">+${imgCount - 1} ảnh</span>` : ''}
+              ${item.trang_thai ? `<span class="absolute top-2 left-2 text-xs px-2 py-0.5 rounded ${statusColor}">${escapeHtml(item.trang_thai)}</span>` : ''}
+            </div>
+            <div class="p-4">
+              <h3 class="font-semibold text-gray-900 mb-1">${escapeHtml(title)}</h3>
+              <p class="text-sm text-gray-500 mb-2">${escapeHtml(item.dia_chi || item.toa_nha || '')}</p>
+              <div class="flex flex-wrap gap-2 text-sm mb-2">
+                <span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded">${dienTich}</span>
+                <span class="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded font-semibold">${giaThue}</span>
+              </div>
+              ${phiDV ? `<p class="text-xs text-gray-500 mb-2">${phiDV}</p>` : ''}
+              ${item.mo_ta ? `<p class="text-sm text-gray-600 mb-2">${escapeHtml(truncate(item.mo_ta, 120))}</p>` : ''}
+              ${tienIchList.length
+                ? `<ul class="text-xs text-gray-500 list-disc list-inside">${tienIchList.slice(0, 4).map((t) => `<li>${escapeHtml(t)}</li>`).join('')}</ul>`
+                : ''}
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    searchInput.addEventListener('input', () => {
+      const q = searchInput.value.toLowerCase().trim();
+      if (!q) return renderGrid(allProducts);
+      const filtered = allProducts.filter((p) =>
+        [p.ten_hien_thi, p.dia_chi, p.toa_nha, p.mo_ta]
+          .filter(Boolean)
+          .some((s) => String(s).toLowerCase().includes(q))
+      );
+      renderGrid(filtered);
+    });
+
+    // Init
+    const savedToken = localStorage.getItem(TOKEN_KEY);
+    if (savedToken) loadProducts(savedToken);
+    else showPwd();
+  </script>
+</body>
+</html>
